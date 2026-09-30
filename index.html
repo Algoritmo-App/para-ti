@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Una flor azul y un mensaje especial para celebrar nuestro amor.">
+  <meta name="theme-color" content="#b9dcf5">
+  <title>Una flor azul para ti 💙</title>
+  <style>
+    :root {
+      color-scheme: light;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      min-height: 100%;
+    }
+
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      margin: 0;
+      padding: 18px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      overflow-x: hidden;
+      background: #eef5fa;
+      color: #17324d;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body.spotify-open {
+      align-items: flex-start;
+    }
+
+    button {
+      font: inherit;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .wrap {
+      position: relative;
+      width: min(100%, 520px);
+      text-align: center;
+    }
+
+    .scene {
+      position: relative;
+      isolation: isolate;
+      width: 100%;
+      height: 600px;
+      height: clamp(560px, calc(100dvh - 138px), 600px);
+      min-height: 560px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      border-radius: 30px;
+      background: linear-gradient(180deg, #b9dcf5 0%, #eaf6fc 57%, #d8c2a5 57%, #a77d59 100%);
+      box-shadow: 0 12px 35px rgba(50, 70, 90, 0.16);
+    }
+
+    .sky {
+      position: absolute;
+      inset: 0 0 43%;
+      background:
+        radial-gradient(circle at 75% 22%, rgba(255, 255, 255, 0.7) 0 3px, transparent 4px),
+        radial-gradient(circle at 20% 32%, rgba(255, 255, 255, 0.55) 0 2px, transparent 3px);
+    }
+
+    /* Corazones flotantes */
+    .hearts {
+      position: absolute;
+      z-index: 2;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .heart {
+      position: absolute;
+      bottom: -20px;
+      opacity: 0;
+      font-size: 16px;
+      animation: float-up 7s ease-in infinite;
+    }
+
+    @keyframes float-up {
+      0% {
+        opacity: 0;
+        transform: translateY(0) translateX(0) rotate(0deg);
+      }
+      10% {
+        opacity: 0.85;
+      }
+      90% {
+        opacity: 0.5;
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(-620px) translateX(var(--drift, 20px)) rotate(25deg);
+      }
+    }
+
+    /* Reproductor de música */
+    .musicBtn {
+      position: absolute;
+      z-index: 20;
+      top: 14px;
+      right: 14px;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.92);
+      color: #17324d;
+      box-shadow: 0 4px 12px rgba(50, 70, 90, 0.2);
+      cursor: pointer;
+      font-size: 18px;
+      transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    .musicBtn:hover {
+      background: #fff;
+      box-shadow: 0 6px 16px rgba(50, 70, 90, 0.26);
+      transform: translateY(-1px);
+    }
+
+    .musicBtn:active {
+      transform: translateY(0) scale(0.96);
+    }
+
+    .musicBtn.playing {
+      background: #dff1ff;
+      color: #285f97;
+      animation: music-pulse 2.4s ease-in-out infinite;
+    }
+
+    @keyframes music-pulse {
+      0%, 100% {
+        box-shadow: 0 4px 12px rgba(50, 70, 90, 0.2), 0 0 0 0 rgba(77, 131, 195, 0.28);
+      }
+      50% {
+        box-shadow: 0 6px 18px rgba(50, 70, 90, 0.24), 0 0 0 8px rgba(77, 131, 195, 0);
+      }
+    }
+
+    .spotifyPanel {
+      width: 100%;
+      max-height: 0;
+      margin-top: 0;
+      visibility: hidden;
+      overflow: hidden;
+      opacity: 0;
+      transform: translateY(-8px);
+      transition:
+        max-height 0.5s cubic-bezier(0.2, 0.8, 0.2, 1),
+        margin-top 0.5s ease,
+        opacity 0.35s ease,
+        transform 0.5s ease,
+        visibility 0s linear 0.5s;
+    }
+
+    .spotifyPanel.show {
+      max-height: 220px;
+      margin-top: 12px;
+      visibility: visible;
+      opacity: 1;
+      transform: none;
+      transition-delay: 0s;
+    }
+
+    .spotifyEmbed {
+      min-height: 152px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      border-radius: 12px;
+      background: #121212;
+      color: #fff;
+      box-shadow: 0 8px 24px rgba(20, 40, 60, 0.2);
+    }
+
+    .spotifyEmbed:empty::before {
+      content: "Cargando Spotify…";
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .spotifyPanel iframe {
+      display: block;
+      width: 100%;
+      height: 152px;
+      border: 0;
+      border-radius: 12px;
+    }
+
+    .spotifyFallback {
+      display: inline-flex;
+      align-items: center;
+      min-height: 38px;
+      margin-top: 6px;
+      padding: 7px 14px;
+      border-radius: 999px;
+      color: #315d82;
+      font-size: 13px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .spotifyFallback:hover {
+      background: rgba(77, 131, 195, 0.1);
+    }
+
+    .spotifyFallback:focus-visible {
+      outline: 3px solid #17324d;
+      outline-offset: 2px;
+    }
+
+    .text {
+      position: absolute;
+      z-index: 10;
+      top: 52px;
+      right: 28px;
+      left: 28px;
+      min-height: 100px;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      font-size: clamp(1.15rem, 5vw, 1.55rem);
+      font-weight: 700;
+      line-height: 1.3;
+      transform: translateY(12px);
+      transition: opacity 0.55s ease, transform 0.55s ease;
+    }
+
+    .text.show {
+      opacity: 1;
+      transform: none;
+    }
+
+    .ground {
+      position: absolute;
+      bottom: -35px;
+      left: -8%;
+      width: 116%;
+      height: 155px;
+      border-radius: 50% 50% 0 0 / 30% 30% 0 0;
+      background: radial-gradient(ellipse at center, #b18a65 0%, #896344 70%);
+    }
+
+    .seed {
+      position: absolute;
+      z-index: 6;
+      bottom: 70px;
+      left: 50%;
+      width: 24px;
+      height: 15px;
+      border-radius: 72% 28% 68% 32%;
+      opacity: 0;
+      background: linear-gradient(145deg, #b98550 0%, #714725 72%);
+      box-shadow:
+        inset 4px 3px 5px rgba(255, 255, 255, 0.2),
+        0 4px 8px rgba(66, 42, 24, 0.28);
+      transform: translateX(-50%) translateY(8px) rotate(-18deg) scale(0.35);
+      transform-origin: center;
+      transition: opacity 0.55s ease, transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .seed::after {
+      content: "";
+      position: absolute;
+      inset: -8px;
+      border: 2px solid rgba(242, 212, 119, 0.55);
+      border-radius: 50%;
+      opacity: 0;
+      transform: scale(0.45);
+      pointer-events: none;
+    }
+
+    .seed.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0) rotate(-18deg) scale(1);
+      animation: seed-awaken 1.8s ease-in-out 0.7s infinite;
+    }
+
+    .seed.show::after {
+      animation: seed-glow 1.8s ease-out 0.7s infinite;
+    }
+
+    .seed.sprouting {
+      opacity: 0;
+      animation: none;
+      transform: translateX(-50%) translateY(-11px) rotate(-8deg) scale(0.7);
+    }
+
+    @keyframes seed-awaken {
+      0%, 100% {
+        transform: translateX(-50%) translateY(0) rotate(-18deg) scale(1);
+      }
+      50% {
+        transform: translateX(-50%) translateY(-4px) rotate(-10deg) scale(1.06);
+      }
+    }
+
+    @keyframes seed-glow {
+      0% {
+        opacity: 0;
+        transform: scale(0.45);
+      }
+      35% {
+        opacity: 0.65;
+      }
+      100% {
+        opacity: 0;
+        transform: scale(1.35);
+      }
+    }
+
+    .stem {
+      position: absolute;
+      z-index: 4;
+      bottom: 78px;
+      left: 50%;
+      width: 9px;
+      height: 0;
+      border-radius: 10px;
+      background: #57916a;
+      transform: translateX(-50%);
+      transition: height 1.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .leaf {
+      position: absolute;
+      z-index: 5;
+      width: 72px;
+      height: 34px;
+      border-radius: 100% 0 100% 0;
+      opacity: 0;
+      background: #649b70;
+      transition: opacity 0.9s ease, transform 0.9s ease;
+    }
+
+    .leaf.l {
+      bottom: 190px;
+      left: calc(50% - 67px);
+      transform: rotate(-24deg) scale(0.5);
+    }
+
+    .leaf.r {
+      bottom: 235px;
+      left: calc(50% + 2px);
+      transform: scaleX(-1) rotate(-24deg) scale(0.5);
+    }
+
+    .leaf.show {
+      opacity: 1;
+      transform: rotate(-24deg) scale(1);
+    }
+
+    .leaf.r.show {
+      transform: scaleX(-1) rotate(-24deg) scale(1);
+    }
+
+    .flower {
+      position: absolute;
+      z-index: 7;
+      top: 28.333%;
+      left: 50%;
+      width: 145px;
+      height: 145px;
+      opacity: 0;
+      transform: translateX(-50%) scale(0.05);
+      transition: opacity 0.9s ease, transform 1.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .flower.show {
+      opacity: 1;
+      transform: translateX(-50%) scale(1);
+    }
+
+    /* Flores secundarias que forman el ramo */
+    .bouquet {
+      position: absolute;
+      z-index: 6;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    /* Césped que brota cuando el ramo termina de formarse */
+    .bouquet::before,
+    .bouquet::after {
+      content: "";
+      position: absolute;
+      z-index: 0;
+      bottom: 57px;
+      opacity: 0;
+      pointer-events: none;
+      filter: drop-shadow(0 3px 2px rgba(48, 83, 48, 0.18));
+      transform: translateY(8px) scaleY(0.12);
+      transform-origin: 50% 100%;
+      transition: opacity 0.75s ease, transform 1s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .bouquet::before {
+      left: 4%;
+      width: 92%;
+      height: 48px;
+      background:
+        linear-gradient(72deg, transparent 46%, #477d55 47% 53%, transparent 54%) 0 100% / 12% 72% repeat-x,
+        linear-gradient(108deg, transparent 46%, #6aa176 47% 53%, transparent 54%) 6% 100% / 12% 92% repeat-x,
+        linear-gradient(90deg, transparent 46%, #3f744d 47% 53%, transparent 54%) 3% 100% / 10% 58% repeat-x;
+    }
+
+    .bouquet::after {
+      bottom: 60px;
+      left: 13%;
+      width: 74%;
+      height: 35px;
+      background:
+        linear-gradient(66deg, transparent 46%, #5a9367 47% 53%, transparent 54%) 0 100% / 15% 78% repeat-x,
+        linear-gradient(114deg, transparent 46%, #76aa7f 47% 53%, transparent 54%) 7.5% 100% / 15% 100% repeat-x;
+    }
+
+    .bouquet.show::before,
+    .bouquet.show::after {
+      opacity: 0.92;
+      transform: translateY(0) scaleY(1);
+    }
+
+    .bouquet.show::before {
+      transition-delay: 2s;
+    }
+
+    .bouquet.show::after {
+      transition-delay: 2.25s;
+    }
+
+    .bouquetBranch {
+      --angle: 0deg;
+      --height: 240px;
+      --stem-delay: 0s;
+      --leaf-delay: 0.55s;
+      --bloom-delay: 0.95s;
+      position: absolute;
+      z-index: 1;
+      bottom: 78px;
+      left: 50%;
+      width: 7px;
+      height: var(--height);
+      border-radius: 999px;
+      opacity: 0;
+      background: linear-gradient(90deg, #4f8a63, #67a177);
+      box-shadow: inset 1px 0 rgba(255, 255, 255, 0.22);
+      transform: translateX(-50%) rotate(var(--angle)) scaleY(0);
+      transform-origin: 50% 100%;
+      transition: opacity 0.25s ease, transform 1.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .bouquet.show .bouquetBranch {
+      opacity: 1;
+      transform: translateX(-50%) rotate(var(--angle)) scaleY(1);
+      transition-delay: var(--stem-delay);
+    }
+
+    .bouquetBranch.b1 {
+      --angle: -32deg;
+      --height: 235px;
+      --stem-delay: 0s;
+      --leaf-delay: 0.55s;
+      --bloom-delay: 0.95s;
+    }
+
+    .bouquetBranch.b2 {
+      --angle: -16deg;
+      --height: 285px;
+      --stem-delay: 0.14s;
+      --leaf-delay: 0.72s;
+      --bloom-delay: 1.08s;
+    }
+
+    .bouquetBranch.b3 {
+      --angle: 17deg;
+      --height: 275px;
+      --stem-delay: 0.28s;
+      --leaf-delay: 0.88s;
+      --bloom-delay: 1.2s;
+    }
+
+    .bouquetBranch.b4 {
+      --angle: 32deg;
+      --height: 235px;
+      --stem-delay: 0.42s;
+      --leaf-delay: 1.02s;
+      --bloom-delay: 1.34s;
+    }
+
+    .bouquetLeaf {
+      position: absolute;
+      top: 52%;
+      width: 46px;
+      height: 22px;
+      border-radius: 100% 0 100% 0;
+      opacity: 0;
+      background: #649b70;
+      transition: opacity 0.55s ease, transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .bouquetLeaf.to-left {
+      right: 2px;
+      transform: rotate(-28deg) scale(0.25);
+      transform-origin: 100% 50%;
+    }
+
+    .bouquetLeaf.to-right {
+      left: 2px;
+      transform: scaleX(-1) rotate(-28deg) scale(0.25);
+      transform-origin: 0 50%;
+    }
+
+    .bouquet.show .bouquetLeaf.to-left {
+      opacity: 1;
+      transform: rotate(-28deg) scale(1);
+      transition-delay: var(--leaf-delay);
+    }
+
+    .bouquet.show .bouquetLeaf.to-right {
+      opacity: 1;
+      transform: scaleX(-1) rotate(-28deg) scale(1);
+      transition-delay: var(--leaf-delay);
+    }
+
+    .bouquetHead {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: 96px;
+      height: 96px;
+      opacity: 0;
+      filter: drop-shadow(0 5px 7px rgba(54, 91, 130, 0.2));
+      transform: translate(-50%, -50%) scale(0.05);
+      transition: opacity 0.65s ease, transform 1.05s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .bouquet.show .bouquetHead {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+      transition-delay: var(--bloom-delay);
+    }
+
+    .bouquetPetal {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 38px;
+      height: 58px;
+      border-radius: 65% 35% 65% 35%;
+      background: linear-gradient(145deg, #c3e4fb, #4b82c2);
+      box-shadow: inset 5px 3px 8px rgba(255, 255, 255, 0.32);
+      transform-origin: 50% 100%;
+    }
+
+    .bp1 { transform: translate(-50%, -100%) rotate(0deg); }
+    .bp2 { transform: translate(-50%, -100%) rotate(72deg); }
+    .bp3 { transform: translate(-50%, -100%) rotate(144deg); }
+    .bp4 { transform: translate(-50%, -100%) rotate(216deg); }
+    .bp5 { transform: translate(-50%, -100%) rotate(288deg); }
+
+    .bouquetCenter {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 27px;
+      height: 27px;
+      border-radius: 50%;
+      background: #f2d477;
+      box-shadow: inset 2px 2px 4px rgba(255, 255, 255, 0.35);
+      transform: translate(-50%, -50%);
+    }
+
+    .petal {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 57px;
+      height: 86px;
+      border-radius: 65% 35% 65% 35%;
+      background: linear-gradient(145deg, #b5dcf8, #4d83c3);
+      box-shadow: inset 7px 4px 12px rgba(255, 255, 255, 0.3);
+      transform-origin: 50% 100%;
+    }
+
+    .p1 { transform: translate(-50%, -100%) rotate(0deg); }
+    .p2 { transform: translate(-50%, -100%) rotate(72deg); }
+    .p3 { transform: translate(-50%, -100%) rotate(144deg); }
+    .p4 { transform: translate(-50%, -100%) rotate(216deg); }
+    .p5 { transform: translate(-50%, -100%) rotate(288deg); }
+
+    .center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: #f2d477;
+      transform: translate(-50%, -50%);
+    }
+
+    .final {
+      position: absolute;
+      z-index: 11;
+      top: 82px;
+      right: 25px;
+      left: 25px;
+      margin: 0;
+      opacity: 0;
+      color: #28485e;
+      font-size: clamp(1.1rem, 4.5vw, 1.3rem);
+      font-weight: 700;
+      line-height: 1.45;
+      text-align: center;
+      text-shadow: 0 1px 5px rgba(255, 255, 255, 0.8);
+      transform: translateY(10px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+
+    .final.show {
+      opacity: 1;
+      transform: none;
+    }
+
+    /* Collage final */
+    .photoWrap {
+      position: absolute;
+      z-index: 15;
+      inset: 0;
+      visibility: hidden;
+      padding: clamp(20px, 5vw, 30px) clamp(16px, 4.5vw, 24px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      background: linear-gradient(180deg, #cfe6f7, #eaf6fc 55%, #d8c2a5 55%, #a77d59);
+      transition: opacity 0.7s ease, visibility 0s linear 0.7s;
+    }
+
+    .photoWrap.show {
+      visibility: visible;
+      opacity: 1;
+      pointer-events: auto;
+      transition-delay: 0s;
+    }
+
+    .polaroid {
+      width: min(88%, 410px);
+      padding: 14px 14px 38px;
+      border-radius: 6px;
+      background: #fff;
+      box-shadow: 0 14px 34px rgba(40, 60, 80, 0.28);
+      transform: rotate(-2deg) scale(0.9);
+      transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .photoWrap.show .polaroid {
+      transform: rotate(-2deg) scale(1);
+    }
+
+    .polaroid img {
+      display: block;
+      width: 100%;
+      max-height: min(300px, 45dvh);
+      border-radius: 2px;
+      background: #dfeaf3;
+      object-fit: contain;
+    }
+
+    .photoFallback {
+      min-height: 220px;
+      padding: 24px;
+      display: grid;
+      place-items: center;
+      border-radius: 2px;
+      background: #dfeaf3;
+      color: #456078;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .photoFallback[hidden] {
+      display: none;
+    }
+
+    .polaroid .cap {
+      margin: 12px 0 0;
+      color: #28485e;
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+
+    .photoWrap .msg {
+      margin: 18px 0 0;
+      color: #28485e;
+      font-size: 16px;
+      font-weight: 650;
+      line-height: 1.4;
+      text-shadow: 0 1px 4px rgba(255, 255, 255, 0.7);
+    }
+
+    .button {
+      min-height: 48px;
+      margin-top: 17px;
+      padding: 13px 25px;
+      border: 0;
+      border-radius: 999px;
+      background: #356da8;
+      color: #fff;
+      box-shadow: 0 6px 18px rgba(53, 109, 168, 0.3);
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 700;
+      transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    .button:hover:not(:disabled) {
+      background: #2d5f93;
+      box-shadow: 0 8px 22px rgba(45, 95, 147, 0.34);
+      transform: translateY(-1px);
+    }
+
+    .button:active:not(:disabled) {
+      transform: translateY(0) scale(0.98);
+    }
+
+    .button:disabled {
+      opacity: 0.72;
+      cursor: wait;
+    }
+
+    .button:focus-visible,
+    .musicBtn:focus-visible {
+      outline: 3px solid #17324d;
+      outline-offset: 3px;
+    }
+
+    .sub {
+      min-height: 20px;
+      margin-top: 9px;
+      color: #4d667d;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    @media (min-height: 740px) {
+      body {
+        align-items: center;
+      }
+    }
+
+    @media (max-width: 380px) {
+      body {
+        padding: 10px;
+      }
+
+      .scene {
+        border-radius: 24px;
+      }
+
+      .text {
+        top: 48px;
+        right: 18px;
+        left: 18px;
+      }
+
+      .final {
+        right: 18px;
+        left: 18px;
+      }
+
+      .polaroid {
+        width: 96%;
+      }
+
+      .bouquetBranch.b1 {
+        --angle: -26deg;
+        --height: 225px;
+      }
+
+      .bouquetBranch.b2 {
+        --angle: -13deg;
+        --height: 270px;
+      }
+
+      .bouquetBranch.b3 {
+        --angle: 14deg;
+        --height: 265px;
+      }
+
+      .bouquetBranch.b4 {
+        --angle: 26deg;
+        --height: 225px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        transition-delay: 0s !important;
+      }
+
+      .heart {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <h1 class="sr-only" id="pageTitle">Una flor azul para ti</h1>
+
+    <section class="scene" id="scene" aria-labelledby="pageTitle">
+      <button
+        class="musicBtn"
+        id="musicBtn"
+        type="button"
+        title="Reproducir canción de Spotify"
+        aria-label="Reproducir canción de Spotify"
+        aria-controls="spotifyPanel"
+        aria-expanded="false"
+        aria-pressed="false"
+      >🎵</button>
+
+      <div class="sky" aria-hidden="true"></div>
+      <div class="hearts" id="hearts" aria-hidden="true"></div>
+      <p class="text" id="txt" aria-live="polite" aria-atomic="true" aria-hidden="true"></p>
+      <p class="final" id="final" aria-hidden="true">
+        Gracias por ser tú<br>
+        <span>y por hacer florecer mis días. 💙</span>
+      </p>
+
+      <div class="seed" id="seed" aria-hidden="true"></div>
+      <div class="flower" id="flower" aria-hidden="true">
+        <div class="petal p1"></div>
+        <div class="petal p2"></div>
+        <div class="petal p3"></div>
+        <div class="petal p4"></div>
+        <div class="petal p5"></div>
+        <div class="center"></div>
+      </div>
+
+      <div class="bouquet" id="bouquet" aria-hidden="true">
+        <div class="bouquetBranch b1">
+          <div class="bouquetLeaf to-right"></div>
+          <div class="bouquetHead">
+            <div class="bouquetPetal bp1"></div>
+            <div class="bouquetPetal bp2"></div>
+            <div class="bouquetPetal bp3"></div>
+            <div class="bouquetPetal bp4"></div>
+            <div class="bouquetPetal bp5"></div>
+            <div class="bouquetCenter"></div>
+          </div>
+        </div>
+        <div class="bouquetBranch b2">
+          <div class="bouquetLeaf to-left"></div>
+          <div class="bouquetHead">
+            <div class="bouquetPetal bp1"></div>
+            <div class="bouquetPetal bp2"></div>
+            <div class="bouquetPetal bp3"></div>
+            <div class="bouquetPetal bp4"></div>
+            <div class="bouquetPetal bp5"></div>
+            <div class="bouquetCenter"></div>
+          </div>
+        </div>
+        <div class="bouquetBranch b3">
+          <div class="bouquetLeaf to-right"></div>
+          <div class="bouquetHead">
+            <div class="bouquetPetal bp1"></div>
+            <div class="bouquetPetal bp2"></div>
+            <div class="bouquetPetal bp3"></div>
+            <div class="bouquetPetal bp4"></div>
+            <div class="bouquetPetal bp5"></div>
+            <div class="bouquetCenter"></div>
+          </div>
+        </div>
+        <div class="bouquetBranch b4">
+          <div class="bouquetLeaf to-left"></div>
+          <div class="bouquetHead">
+            <div class="bouquetPetal bp1"></div>
+            <div class="bouquetPetal bp2"></div>
+            <div class="bouquetPetal bp3"></div>
+            <div class="bouquetPetal bp4"></div>
+            <div class="bouquetPetal bp5"></div>
+            <div class="bouquetCenter"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="leaf l" id="leaf1" aria-hidden="true"></div>
+      <div class="leaf r" id="leaf2" aria-hidden="true"></div>
+      <div class="stem" id="stem" aria-hidden="true"></div>
+      <div class="ground" aria-hidden="true"></div>
+
+      <div class="photoWrap" id="photoWrap" aria-hidden="true">
+        <div class="polaroid">
+          <img id="collage" src="imagenes/collage.jpeg" alt="Collage de nuestros momentos juntos">
+          <div class="photoFallback" id="photoFallback" role="img" aria-label="Foto pendiente" hidden>
+            Agrega tu foto en <strong>imagenes/collage.jpeg</strong>
+          </div>
+          <p class="cap">Feliz Día al mejor novio del mundo 👩🏻‍❤️‍💋‍👨🏻🥇</p>
+        </div>
+        <p class="msg"> ✨ #NationalBoyfriendDay ✨</p>
+      </div>
+    </section>
+
+    <div
+      class="spotifyPanel"
+      id="spotifyPanel"
+      role="region"
+      aria-label="Reproductor de Spotify"
+      aria-hidden="true"
+      inert
+    >
+      <div class="spotifyEmbed" id="spotifyEmbed"></div>
+      <a
+        class="spotifyFallback"
+        href="https://open.spotify.com/track/31DHddrEbrF7mXFV9gozRH?si=dbc5556317284eeb"
+        target="_blank"
+        rel="noopener noreferrer"
+      >Si no inicia, abrir la canción en Spotify ↗</a>
+    </div>
+
+    <button
+      class="button"
+      id="next"
+      type="button"
+      aria-controls="scene"
+      aria-busy="false"
+    >Comenzar 💙</button>
+  </main>
+
+  <script>
+    const txt = document.getElementById('txt');
+    const btn = document.getElementById('next');
+    const seed = document.getElementById('seed');
+    const stem = document.getElementById('stem');
+    const leaf1 = document.getElementById('leaf1');
+    const leaf2 = document.getElementById('leaf2');
+    const flower = document.getElementById('flower');
+    const bouquet = document.getElementById('bouquet');
+    const final = document.getElementById('final');
+    const photoWrap = document.getElementById('photoWrap');
+    const musicBtn = document.getElementById('musicBtn');
+    const spotifyPanel = document.getElementById('spotifyPanel');
+    const spotifyEmbed = document.getElementById('spotifyEmbed');
+    const heartsBox = document.getElementById('hearts');
+    const collage = document.getElementById('collage');
+    const photoFallback = document.getElementById('photoFallback');
+    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const spotifyTrackUri = 'spotify:track:31DHddrEbrF7mXFV9gozRH';
+
+    const phrases = [
+      'Mor, hay algo que quiero decirte…',
+      'Contigo aprendí que las cosas más bonitas crecen poco a poco…',
+      'con tiempo, cuidado y mucha paciencia.',
+      'Y así florecen hasta volverse extraordinarias. 💙',
+      'Mi mundo florece contigo y hoy quiero regalarte un ramo de flores azules…',
+      'para que siempre recuerdes lo especial que eres para mí. 💙😘'
+    ];
+
+    const seedPhraseIndex = 0;
+    const growthPhraseIndex = 1;
+    const patiencePhraseIndex = 2;
+    const bloomPhraseIndex = 3;
+    const giftPhraseIndex = phrases.length - 2;
+    const lastPhraseIndex = phrases.length - 1;
+    const seedReadingTime = 1800;
+    const growthReadingTime = 2600;
+    const giftPhraseReadingTime = 3600;
+    const lastPhraseReadingTime = 3200;
+
+    let currentPhrase = -1;
+    let busy = false;
+    let finalShown = false;
+    let photoShown = false;
+    let heartsTimer = null;
+    let spotifyController = null;
+    let spotifyReady = false;
+    let spotifyPlaying = false;
+    let spotifyPlaybackRequested = false;
+    let spotifyManuallyPaused = false;
+    let spotifyPanelHideTimer = null;
+    const pendingTimers = new Set();
+
+    function motionDelay(milliseconds) {
+      return motionQuery.matches ? 0 : milliseconds;
+    }
+
+    function schedule(callback, milliseconds, preserveDelay = false) {
+      const delay = preserveDelay ? milliseconds : motionDelay(milliseconds);
+      const timer = window.setTimeout(() => {
+        pendingTimers.delete(timer);
+        callback();
+      }, delay);
+      pendingTimers.add(timer);
+      return timer;
+    }
+
+    function clearPendingTimers() {
+      pendingTimers.forEach((timer) => window.clearTimeout(timer));
+      pendingTimers.clear();
+    }
+
+    function setBusy(isBusy) {
+      busy = isBusy;
+      btn.disabled = isBusy;
+      btn.setAttribute('aria-busy', String(isBusy));
+    }
+
+    function setVisible(element, isVisible) {
+      element.classList.toggle('show', isVisible);
+      element.setAttribute('aria-hidden', String(!isVisible));
+    }
+
+    function applyGrowthStage(index) {
+      if (index === seedPhraseIndex) {
+        seed.classList.remove('sprouting');
+        seed.classList.add('show');
+        stem.style.height = '0';
+      }
+      if (index === growthPhraseIndex) {
+        seed.classList.remove('show');
+        seed.classList.add('sprouting');
+        stem.style.height = '205px';
+        leaf1.classList.add('show');
+      }
+      if (index === patiencePhraseIndex) {
+        stem.style.height = '255px';
+        leaf2.classList.add('show');
+      }
+      if (index === bloomPhraseIndex) {
+        flower.classList.add('show');
+      }
+      if (index === giftPhraseIndex) {
+        bouquet.classList.add('show');
+      }
+    }
+
+    function reset() {
+      clearPendingTimers();
+      currentPhrase = -1;
+      finalShown = false;
+      photoShown = false;
+      txt.textContent = '';
+      setVisible(txt, false);
+      setVisible(final, false);
+      setVisible(photoWrap, false);
+      seed.classList.remove('show', 'sprouting');
+      leaf1.classList.remove('show');
+      leaf2.classList.remove('show');
+      flower.classList.remove('show');
+      bouquet.classList.remove('show');
+      stem.style.height = '0';
+      btn.textContent = 'Comenzar 💙';
+      setBusy(false);
+    }
+
+    function showPhrase(index) {
+      clearPendingTimers();
+      finalShown = false;
+      setBusy(true);
+      setVisible(final, false);
+      setVisible(txt, false);
+      btn.textContent = 'Siguiente';
+
+      schedule(() => {
+        const isSeedPhrase = index === seedPhraseIndex;
+        const isGrowthPhrase = index === growthPhraseIndex;
+        const isGiftPhrase = index === giftPhraseIndex;
+        const isLastPhrase = index === lastPhraseIndex;
+
+        txt.textContent = phrases[index];
+        setVisible(txt, true);
+        applyGrowthStage(index);
+
+        const readingTime = isSeedPhrase
+          ? seedReadingTime
+          : isGrowthPhrase
+            ? growthReadingTime
+            : isGiftPhrase
+              ? giftPhraseReadingTime
+              : isLastPhrase
+                ? lastPhraseReadingTime
+                : 0;
+
+        if (readingTime > 0) {
+          schedule(() => setBusy(false), readingTime, true);
+          return;
+        }
+
+        setBusy(false);
+      }, 280);
+    }
+
+    function showFinalMessage() {
+      clearPendingTimers();
+      setBusy(true);
+      setVisible(txt, false);
+      btn.textContent = 'Siguiente';
+
+      schedule(() => {
+        setVisible(final, true);
+        finalShown = true;
+        btn.textContent = 'Ver nuestra foto 🥰';
+        setBusy(false);
+      }, 500);
+    }
+
+    function showPhoto() {
+      clearPendingTimers();
+      setBusy(true);
+      setVisible(final, false);
+
+      schedule(() => {
+        setVisible(photoWrap, true);
+        photoShown = true;
+        btn.textContent = 'Volver a empezar 💙';
+        setBusy(false);
+      }, 500);
+    }
+
+    function next() {
+      if (busy) {
+        return;
+      }
+
+      if (currentPhrase === -1 && !spotifyPlaying && !spotifyManuallyPaused) {
+        requestSpotifyPlayback();
+      }
+
+      if (photoShown) {
+        reset();
+        return;
+      }
+      if (finalShown) {
+        showPhoto();
+        return;
+      }
+      if (currentPhrase === lastPhraseIndex) {
+        showFinalMessage();
+        return;
+      }
+
+      currentPhrase += 1;
+      showPhrase(currentPhrase);
+    }
+
+    function clearSpotifyPanelHideTimer() {
+      if (spotifyPanelHideTimer !== null) {
+        window.clearTimeout(spotifyPanelHideTimer);
+        spotifyPanelHideTimer = null;
+      }
+    }
+
+    function showSpotifyPanel() {
+      clearSpotifyPanelHideTimer();
+      document.body.classList.add('spotify-open');
+      spotifyPanel.classList.add('show');
+      spotifyPanel.setAttribute('aria-hidden', 'false');
+      spotifyPanel.inert = false;
+      musicBtn.setAttribute('aria-expanded', 'true');
+    }
+
+    function hideSpotifyPanel() {
+      clearSpotifyPanelHideTimer();
+      document.body.classList.remove('spotify-open');
+      spotifyPanel.classList.remove('show');
+      spotifyPanel.setAttribute('aria-hidden', 'true');
+      spotifyPanel.inert = true;
+      musicBtn.setAttribute('aria-expanded', 'false');
+    }
+
+    function scheduleSpotifyPanelHide() {
+      if (!spotifyPanel.classList.contains('show') || spotifyPanelHideTimer !== null) {
+        return;
+      }
+
+      spotifyPanelHideTimer = window.setTimeout(() => {
+        spotifyPanelHideTimer = null;
+        if (spotifyPlaying) {
+          hideSpotifyPanel();
+        }
+      }, 650);
+    }
+
+    function updateSpotifyButton() {
+      musicBtn.textContent = spotifyPlaying ? '⏸' : '🎵';
+      musicBtn.classList.toggle('playing', spotifyPlaying);
+      musicBtn.setAttribute('aria-pressed', String(spotifyPlaying));
+      const label = spotifyPlaying
+        ? 'Pausar canción de Spotify'
+        : 'Reproducir canción de Spotify';
+      musicBtn.setAttribute('aria-label', label);
+      musicBtn.title = label;
+    }
+
+    function requestSpotifyPlayback() {
+      showSpotifyPanel();
+      spotifyPlaybackRequested = true;
+
+      if (spotifyController && spotifyReady) {
+        try {
+          spotifyController.play();
+        } catch (error) {
+          /* El reproductor visible permite iniciar la canción manualmente. */
+        }
+      }
+    }
+
+    function toggleSpotifyPlayback() {
+      if (!spotifyController || !spotifyReady) {
+        showSpotifyPanel();
+        spotifyManuallyPaused = false;
+        spotifyPlaybackRequested = true;
+        return;
+      }
+
+      try {
+        if (spotifyPlaying) {
+          clearSpotifyPanelHideTimer();
+          spotifyManuallyPaused = true;
+          spotifyPlaybackRequested = false;
+          spotifyPlaying = false;
+          updateSpotifyButton();
+          spotifyController.pause();
+        } else {
+          spotifyManuallyPaused = false;
+          spotifyPlaybackRequested = true;
+          spotifyController.resume();
+        }
+      } catch (error) {
+        showSpotifyPanel();
+        /* El usuario todavía puede utilizar los controles del Embed. */
+      }
+    }
+
+    window.onSpotifyIframeApiReady = (IFrameAPI) => {
+      const options = {
+        uri: spotifyTrackUri,
+        width: '100%',
+        height: 152
+      };
+
+      IFrameAPI.createController(spotifyEmbed, options, (EmbedController) => {
+        spotifyController = EmbedController;
+
+        EmbedController.addListener('ready', () => {
+          spotifyReady = true;
+          if (spotifyPlaybackRequested && !spotifyManuallyPaused) {
+            try {
+              EmbedController.play();
+            } catch (error) {
+              /* El reproductor visible funciona como respaldo. */
+            }
+          }
+        });
+
+        EmbedController.addListener('playback_started', () => {
+          spotifyPlaying = true;
+          spotifyPlaybackRequested = false;
+          updateSpotifyButton();
+          scheduleSpotifyPanelHide();
+        });
+
+        EmbedController.addListener('playback_update', (event) => {
+          if (!event?.data || typeof event.data.isPaused !== 'boolean') {
+            return;
+          }
+
+          spotifyPlaying = !event.data.isPaused;
+          if (spotifyPlaying) {
+            spotifyPlaybackRequested = false;
+            scheduleSpotifyPanelHide();
+          } else {
+            clearSpotifyPanelHideTimer();
+          }
+          updateSpotifyButton();
+        });
+      });
+    };
+
+    function spawnHeart() {
+      const heart = document.createElement('div');
+      heart.className = 'heart';
+      heart.textContent = Math.random() > 0.5 ? '💙' : '🌸';
+      heart.style.left = `${5 + Math.random() * 90}%`;
+      heart.style.setProperty('--drift', `${Math.random() * 40 - 20}px`);
+      heart.style.animationDuration = `${6 + Math.random() * 3}s`;
+      heart.addEventListener('animationend', () => heart.remove(), { once: true });
+      heartsBox.appendChild(heart);
+    }
+
+    function syncHearts() {
+      if (heartsTimer !== null) {
+        window.clearInterval(heartsTimer);
+        heartsTimer = null;
+      }
+
+      if (motionQuery.matches || document.hidden) {
+        heartsBox.replaceChildren();
+        return;
+      }
+
+      spawnHeart();
+      heartsTimer = window.setInterval(spawnHeart, 900);
+    }
+
+    musicBtn.addEventListener('click', toggleSpotifyPlayback);
+    btn.addEventListener('click', next);
+    document.addEventListener('visibilitychange', syncHearts);
+
+    if (typeof motionQuery.addEventListener === 'function') {
+      motionQuery.addEventListener('change', syncHearts);
+    } else {
+      motionQuery.addListener(syncHearts);
+    }
+
+    collage.addEventListener('error', () => {
+      collage.hidden = true;
+      photoFallback.hidden = false;
+    }, { once: true });
+
+    syncHearts();
+  </script>
+  <script src="https://open.spotify.com/embed/iframe-api/v1" async></script>
+</body>
+</html>
