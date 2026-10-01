@@ -106,22 +106,27 @@
       pointer-events: none;
     }
 
+    /*
+      Forma de lágrima: a este tamaño un border-radius elíptico se lee como un
+      círculo. El vértice sin redondear le da la punta que identifica un pétalo.
+      Sin sombra interior a propósito: le daba aspecto de piedra pulida.
+    */
     .fallingPetal {
       position: absolute;
       top: -28px;
-      width: 15px;
-      height: 21px;
-      border-radius: 50% 50% 46% 46% / 62% 62% 38% 38%;
-      background: linear-gradient(180deg, #e2f1fd 0%, #a9d0f2 55%, #6d9ccd 100%);
-      box-shadow: inset 0 -3px 5px rgba(38, 72, 116, 0.22);
+      width: 12px;
+      height: 19px;
+      border-radius: 100% 0 100% 100%;
+      background: linear-gradient(145deg, #eaf5fe 0%, #c2dcf6 60%, #9cc0e4 100%);
       opacity: 0;
       animation: petal-fall var(--fall-time, 7s) linear forwards;
     }
 
     /* El pétalo arrancado cae más grande, porque viene de la flor y no del aire. */
     .fallingPetal.plucked {
-      width: 26px;
-      height: 38px;
+      width: 22px;
+      height: 33px;
+      background: linear-gradient(145deg, #e2f1fd 0%, #b2d8f7 50%, #74a7da 100%);
     }
 
     @keyframes petal-fall {
@@ -130,10 +135,10 @@
         transform: translate(0, 0) rotate(0deg);
       }
       7% {
-        opacity: 0.95;
+        opacity: 0.8;
       }
       100% {
-        opacity: 0.9;
+        opacity: 0.75;
         transform:
           translate(var(--drift, 20px), var(--fall-distance, 480px))
           rotate(var(--spin, 300deg));
@@ -159,11 +164,10 @@
     .restingPetal {
       position: absolute;
       bottom: 0;
-      width: 17px;
-      height: 11px;
-      border-radius: 50%;
-      background: linear-gradient(180deg, #d4e7f8 0%, #8fb4dc 70%, #6b93c4 100%);
-      box-shadow: 0 1px 2px rgba(48, 74, 104, 0.22);
+      width: 15px;
+      height: 9px;
+      border-radius: 100% 0 100% 100%;
+      background: linear-gradient(145deg, #dcebf9 0%, #a8c6e5 70%, #8badd2 100%);
       opacity: 0;
       transform: rotate(var(--lie, 0deg)) scale(0.5);
       animation: petal-land 0.45s ease-out forwards;
@@ -871,6 +875,8 @@
       pointer-events: none;
     }
 
+
+
     .final {
       position: absolute;
       z-index: 11;
@@ -1027,22 +1033,33 @@
     }
 
     .albumCap {
+      flex: 1;
+      min-width: 0;
       font-size: 15px;
     }
 
     .albumDate {
-      flex: none;
       font-size: 13px;
       opacity: 0.75;
     }
 
+    /*
+      Agrupa la flor con la fecha. Antes la flor iba en position:absolute sobre
+      la esquina y se encimaba con la fecha; en el flujo normal eso no puede pasar.
+    */
+    .albumMeta {
+      flex: none;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
     /* Flor prensada: aplanada, sin brillos y con el azul apagado por los años. */
     .pressed {
-      position: absolute;
-      right: 12px;
-      bottom: 8px;
-      width: 46px;
-      height: 46px;
+      position: relative;
+      flex: none;
+      width: 40px;
+      height: 40px;
       opacity: 0.72;
       transform: rotate(14deg);
     }
@@ -1074,15 +1091,6 @@
       border-radius: 50%;
       background: #b59a62;
       transform: translate(-50%, -50%);
-    }
-
-    .photoWrap .msg {
-      margin: 16px 0 0;
-      color: #28485e;
-      font-size: 15px;
-      font-weight: 650;
-      line-height: 1.4;
-      text-shadow: 0 1px 4px rgba(255, 255, 255, 0.7);
     }
 
     .button {
@@ -1329,19 +1337,20 @@
 
           <div class="albumFoot">
             <p class="albumCap">Feliz día al mejor novio del mundo</p>
-            <p class="albumDate">3 · 10 · 2026</p>
-          </div>
 
-          <div class="pressed" aria-hidden="true">
-            <div class="pressedPetal pp1"></div>
-            <div class="pressedPetal pp2"></div>
-            <div class="pressedPetal pp3"></div>
-            <div class="pressedPetal pp4"></div>
-            <div class="pressedPetal pp5"></div>
-            <div class="pressedCore"></div>
+            <div class="albumMeta">
+              <div class="pressed" aria-hidden="true">
+                <div class="pressedPetal pp1"></div>
+                <div class="pressedPetal pp2"></div>
+                <div class="pressedPetal pp3"></div>
+                <div class="pressedPetal pp4"></div>
+                <div class="pressedPetal pp5"></div>
+                <div class="pressedCore"></div>
+              </div>
+              <p class="albumDate">3 · 10 · 2026</p>
+            </div>
           </div>
         </div>
-        <p class="msg">Guardado para no olvidarlo 💙</p>
       </div>
     </section>
 
@@ -1781,7 +1790,26 @@
               updateMusicButton();
             }
           },
-          onError: () => {
+          onError: (event) => {
+            /*
+              El código distingue causas que se arreglan de formas opuestas:
+                101 y 150 -> el dueño del video prohíbe incrustarlo, hay que
+                             buscar otra versión de la canción.
+                100       -> el video no existe o es privado.
+                2         -> el id está mal escrito.
+                5         -> fallo del reproductor HTML5.
+              Se registra en consola para poder diagnosticarlo sin adivinar.
+            */
+            const codes = {
+              2: 'id de video inválido',
+              5: 'error del reproductor HTML5',
+              100: 'video no encontrado o privado',
+              101: 'el dueño no permite incrustarlo',
+              150: 'el dueño no permite incrustarlo'
+            };
+            const code = event?.data;
+            console.warn(`YouTube no pudo reproducir (código ${code}): ${codes[code] ?? 'causa desconocida'}`);
+
             /* Queda el enlace para abrir la canción directo en YouTube. */
             showMusicPanel();
           }
@@ -1872,7 +1900,11 @@
       }
 
       spawnFallingPetal();
-      petalRainTimer = window.setInterval(() => spawnFallingPetal(), 1500);
+      /*
+        Cada 2.4s con caídas de 6 a 9s deja unos 3 pétalos en el aire a la vez.
+        A 1.5s eran 5 y el cielo se veía lleno de puntos en vez de sereno.
+      */
+      petalRainTimer = window.setInterval(() => spawnFallingPetal(), 2400);
     }
 
     musicBtn.addEventListener('click', toggleMusicPlayback);
