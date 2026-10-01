@@ -2,6 +2,11 @@
 # a la web únicamente sube el collage ya armado.
 originales/
 
+# Imágenes de personajes con derechos de autor. No deben llegar al repo
+# público ni publicarse en el sitio: el dibujo del sitio es original.
+imagenes/Snoop.jpg
+imagenes/Snoopy.jpg
+
 # Basura del sistema operativo
 Thumbs.db
 desktop.ini
