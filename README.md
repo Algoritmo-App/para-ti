@@ -1,35 +1,62 @@
-# Flor azul para mi novio 💙
+# Dos regalos 🧡💙
 
-## 1. Agrega tu foto
-Pon tu foto collage aquí, con exactamente este nombre:
+Dos páginas estáticas, cada una con su fecha. Sin build, sin dependencias: HTML, CSS y JS en un solo archivo cada una.
+
+## Qué es cada archivo
+
+| Archivo | Para qué | Link |
+|---|---|---|
+| `sorpresa.html` | Pista Hot Wheels, 30 de septiembre | `/para-ti/sorpresa.html` |
+| `flor.html` | Flor azul, 3 de octubre | `/para-ti/flor.html` |
+| `index.html` | Página puente sin pistas, para que recortar la URL no revele nada | `/para-ti/` |
+
+Base del sitio: `https://algoritmo-app.github.io/para-ti/`
+
+Medios:
+
 ```
-imagenes/collage.jpg
+imagenes/collage.jpeg            → flor.html
+imagenes/collage-sorpresa.jpeg   → sorpresa.html
+video/clip.mp4                   → sorpresa.html
+originales/                      → fotos sin editar, IGNORADA por git
 ```
-(Si tu foto es .png o .jpeg, cambia también el nombre dentro de `index.html` en la línea que dice `src="imagenes/collage.jpg"`).
 
-## 2. Música
-Ya está integrada la canción que elegiste mediante el reproductor oficial de Spotify (el botón 🎵 arriba a la derecha la despliega). No necesitas subir ningún archivo de audio.
+## Cómo no arruinar la sorpresa
 
-Si más adelante quieres cambiar la canción:
-1. Abre la canción en Spotify → ⋯ → Compartir → Copiar enlace.
-2. Del link copia solo el código que va después de `/track/` y antes del `?` (ejemplo: en `open.spotify.com/track/3Y4m9Td603gbfMB86UNafs?si=...` el código es `3Y4m9Td603gbfMB86UNafs`).
-3. En `index.html`, busca la línea con `open.spotify.com/embed/track/` y reemplaza el código por el nuevo.
+El `<title>` y la `<meta description>` de ambas páginas son neutros a propósito: es lo que WhatsApp lee para armar la vista previa del enlace. Si los cambias por algo descriptivo, el link delata el regalo antes de que lo abran.
 
-La carpeta `musica/` ya no se usa, puedes eliminarla si quieres.
+`index.html` nunca debe enlazar a `sorpresa.html` ni a `flor.html`. Es justo lo que evita que recortando la URL se llegue al otro regalo antes de su fecha.
 
-## 3. Sube el proyecto a GitHub
-1. Crea una cuenta en https://github.com si no tienes una.
-2. Crea un repositorio nuevo, público, con el nombre que quieras (ej. `flor-para-ti`). NO marques "Add a README" si ya tienes esta carpeta.
-3. Sube estos 3 elementos a ese repositorio: `index.html`, la carpeta `imagenes/` y la carpeta `musica/`.
-   - Más fácil: en la página del repo, dale clic a "Add file" → "Upload files", arrastra los archivos y dale "Commit changes".
-4. Ve a **Settings** → **Pages** (en el menú lateral).
-5. En "Source", selecciona la rama `main` y la carpeta `/root`, luego "Save".
-6. Espera 1-2 minutos y GitHub te dará una URL como:
-   ```
-   https://tu-usuario.github.io/flor-para-ti/
-   ```
-7. ¡Esa es la liga que puedes mandar por WhatsApp! 💙
+## Cambiar la canción
 
-## Notas
-- Si el archivo de música pesa mucho, considera comprimirlo o usar una versión más corta (WhatsApp y GitHub no tienen problema, pero carga más rápido si pesa poco).
-- El botón 🔇/🔊 arriba a la derecha controla la música (no suena automático porque los navegadores lo bloquean si no hay un clic primero).
+Cada página trae su propio track de Spotify.
+
+1. En Spotify: canción → ⋯ → Compartir → Copiar enlace.
+2. Del link toma solo el código entre `/track/` y el `?`. En `open.spotify.com/track/3Y4m9Td603gbfMB86UNafs?si=...` el código es `3Y4m9Td603gbfMB86UNafs`.
+3. En el archivo que quieras, reemplázalo en **dos** lugares: la constante `spotifyTrackUri` y el enlace de respaldo `spotifyFallback`.
+
+## Cambiar las fotos
+
+El collage de `sorpresa.html` se armó con un script a partir de las cinco fotos de `originales/`. Si cambias las fotos hay que volver a generarlo; no se actualiza solo.
+
+## Publicar cambios
+
+```powershell
+git add <archivos>
+git commit -m "mensaje"
+git push
+```
+
+GitHub Pages reconstruye en uno o dos minutos.
+
+## Si no ves tus cambios en el navegador
+
+No es el código. GitHub Pages manda `Cache-Control: max-age=600`, así que tu navegador guarda el HTML diez minutos. Como las frases van embebidas en ese mismo archivo, un HTML viejo significa textos viejos.
+
+Recarga con **Ctrl + Shift + R**, o deja el DevTools abierto (F12) con "Disable cache" marcado en la pestaña Network.
+
+Solo te pasa a ti por estar recargando. Quien abra el link por primera vez recibe la versión actual.
+
+## Advertencia
+
+`originales/` está en `.gitignore`, o sea que **solo existe en esta máquina** y no se respalda en GitHub. Si formateas, esas fotos se pierden. Los collages sí están en el repo, pero no los originales en resolución completa.
