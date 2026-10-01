@@ -1,0 +1,8 @@
+# Fotos y videos originales sin editar. Se quedan solo en la máquina local:
+# a la web únicamente sube el collage ya armado.
+originales/
+
+# Basura del sistema operativo
+Thumbs.db
+desktop.ini
+.DS_Store

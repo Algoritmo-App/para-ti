@@ -1,0 +1,1773 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!--
+    Título y descripción a propósito neutros: son lo que WhatsApp muestra
+    en la vista previa del enlace, así que no deben revelar la sorpresa.
+  -->
+  <meta name="description" content="Ábrelo, es para ti.">
+  <meta name="theme-color" content="#f2661a">
+  <title>Algo para ti 🧡</title>
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      min-height: 100%;
+    }
+
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      margin: 0;
+      padding: 18px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      overflow-x: hidden;
+      background: #14161f;
+      color: #ffe9d6;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body.spotify-open {
+      align-items: flex-start;
+    }
+
+    button {
+      font: inherit;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .wrap {
+      position: relative;
+      width: min(100%, 520px);
+      text-align: center;
+    }
+
+    .scene {
+      position: relative;
+      isolation: isolate;
+      width: 100%;
+      height: 600px;
+      height: clamp(560px, calc(100dvh - 138px), 600px);
+      min-height: 560px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      border-radius: 30px;
+      background: linear-gradient(180deg, #1b2030 0%, #2b2135 46%, #3a2a2a 62%, #24262f 100%);
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.45);
+    }
+
+    /* Techo de garage con luces y estrellas */
+    .sky {
+      position: absolute;
+      z-index: 0;
+      inset: 0 0 38%;
+      background:
+        radial-gradient(circle at 18% 16%, rgba(255, 214, 170, 0.5) 0 2px, transparent 3px),
+        radial-gradient(circle at 74% 12%, rgba(255, 235, 210, 0.42) 0 2px, transparent 3px),
+        radial-gradient(circle at 46% 26%, rgba(255, 200, 150, 0.3) 0 1.5px, transparent 3px),
+        radial-gradient(ellipse at 50% 0%, rgba(242, 102, 26, 0.26), transparent 62%);
+    }
+
+    /* Chispas y banderas flotantes */
+    .sparks {
+      position: absolute;
+      z-index: 9;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .spark {
+      position: absolute;
+      bottom: -20px;
+      opacity: 0;
+      font-size: 16px;
+      animation: float-up 7s ease-in infinite;
+    }
+
+    @keyframes float-up {
+      0% {
+        opacity: 0;
+        transform: translateY(0) translateX(0) rotate(0deg);
+      }
+      10% {
+        opacity: 0.85;
+      }
+      90% {
+        opacity: 0.5;
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(-620px) translateX(var(--drift, 20px)) rotate(25deg);
+      }
+    }
+
+    /* Reproductor de música */
+    .musicBtn {
+      position: absolute;
+      z-index: 20;
+      top: 14px;
+      right: 14px;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 0;
+      border-radius: 50%;
+      background: rgba(255, 245, 235, 0.94);
+      color: #7a2f0b;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      cursor: pointer;
+      font-size: 18px;
+      transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    .musicBtn:hover {
+      background: #fff;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+      transform: translateY(-1px);
+    }
+
+    .musicBtn:active {
+      transform: translateY(0) scale(0.96);
+    }
+
+    .musicBtn.playing {
+      background: #ffe0c4;
+      color: #c2410c;
+      animation: music-pulse 2.4s ease-in-out infinite;
+    }
+
+    @keyframes music-pulse {
+      0%, 100% {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 0 0 0 0 rgba(242, 102, 26, 0.45);
+      }
+      50% {
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45), 0 0 0 8px rgba(242, 102, 26, 0);
+      }
+    }
+
+    .spotifyPanel {
+      width: 100%;
+      max-height: 0;
+      margin-top: 0;
+      visibility: hidden;
+      overflow: hidden;
+      opacity: 0;
+      transform: translateY(-8px);
+      transition:
+        max-height 0.5s cubic-bezier(0.2, 0.8, 0.2, 1),
+        margin-top 0.5s ease,
+        opacity 0.35s ease,
+        transform 0.5s ease,
+        visibility 0s linear 0.5s;
+    }
+
+    .spotifyPanel.show {
+      max-height: 220px;
+      margin-top: 12px;
+      visibility: visible;
+      opacity: 1;
+      transform: none;
+      transition-delay: 0s;
+    }
+
+    .spotifyEmbed {
+      min-height: 152px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      border-radius: 12px;
+      background: #121212;
+      color: #fff;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    }
+
+    .spotifyEmbed:empty::before {
+      content: "Cargando Spotify…";
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .spotifyPanel iframe {
+      display: block;
+      width: 100%;
+      height: 152px;
+      border: 0;
+      border-radius: 12px;
+    }
+
+    .spotifyFallback {
+      display: inline-flex;
+      align-items: center;
+      min-height: 38px;
+      margin-top: 6px;
+      padding: 7px 14px;
+      border-radius: 999px;
+      color: #ffb98a;
+      font-size: 13px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .spotifyFallback:hover {
+      background: rgba(242, 102, 26, 0.16);
+    }
+
+    .spotifyFallback:focus-visible {
+      outline: 3px solid #ffb98a;
+      outline-offset: 2px;
+    }
+
+    .text {
+      position: absolute;
+      z-index: 10;
+      top: 52px;
+      right: 28px;
+      left: 28px;
+      min-height: 100px;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      color: #fff3e6;
+      font-size: clamp(1.15rem, 5vw, 1.55rem);
+      font-weight: 700;
+      line-height: 1.3;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+      transform: translateY(12px);
+      transition: opacity 0.55s ease, transform 0.55s ease;
+    }
+
+    .text.show {
+      opacity: 1;
+      transform: none;
+    }
+
+    /* Asfalto */
+    .ground {
+      position: absolute;
+      z-index: 1;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 118px;
+      background:
+        repeating-linear-gradient(90deg, transparent 0 34px, rgba(255, 255, 255, 0.05) 34px 36px),
+        linear-gradient(180deg, #3b3d47 0%, #22242c 100%);
+      box-shadow: inset 0 3px 10px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Semáforo de salida */
+    .startLights {
+      position: absolute;
+      z-index: 7;
+      bottom: 150px;
+      left: 8%;
+      padding: 7px 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      border-radius: 9px;
+      background: #15161c;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      opacity: 0;
+      transform: translateY(8px) scale(0.8);
+      transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .startLights.show {
+      opacity: 1;
+      transform: none;
+    }
+
+    .startLights.hide {
+      opacity: 0;
+      transform: translateY(-6px) scale(0.85);
+    }
+
+    .lamp {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: #3a3b44;
+      transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .startLights.stage-1 .lamp.red,
+    .startLights.stage-2 .lamp.red,
+    .startLights.stage-3 .lamp.red {
+      background: #ef4444;
+      box-shadow: 0 0 9px rgba(239, 68, 68, 0.85);
+    }
+
+    .startLights.stage-2 .lamp.amber,
+    .startLights.stage-3 .lamp.amber {
+      background: #fbbf24;
+      box-shadow: 0 0 9px rgba(251, 191, 36, 0.85);
+    }
+
+    .startLights.stage-3 .lamp.green {
+      background: #22c55e;
+      box-shadow: 0 0 11px rgba(34, 197, 94, 0.9);
+    }
+
+    /* Pista naranja por tramos */
+    .trackSeg {
+      position: absolute;
+      z-index: 3;
+      bottom: 112px;
+      height: 15px;
+      border-radius: 3px;
+      background: linear-gradient(180deg, #ffb066 0 3px, #ff8a2b 3px, #e8590c 100%);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.42);
+      transform: scaleX(0);
+      transform-origin: 0 50%;
+      transition: transform 1.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .trackSeg.show {
+      transform: scaleX(1);
+    }
+
+    .trackSeg.s1 {
+      left: 0;
+      width: 44%;
+    }
+
+    .trackSeg.s2 {
+      left: 44%;
+      width: 20%;
+    }
+
+    .trackSeg.s3 {
+      left: 64%;
+      width: 36%;
+    }
+
+    /* Rizo (loop) */
+    .loop {
+      position: absolute;
+      z-index: 4;
+      bottom: 122px;
+      left: 54%;
+      width: 128px;
+      height: 128px;
+      margin-left: -64px;
+      border: 13px solid #ff8a2b;
+      border-radius: 50%;
+      opacity: 0;
+      box-shadow:
+        inset 0 0 0 3px rgba(255, 176, 102, 0.75),
+        0 6px 16px rgba(0, 0, 0, 0.45);
+      transform: scale(0.2) rotate(-40deg);
+      transition: opacity 0.6s ease, transform 1s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .loop.show {
+      opacity: 1;
+      transform: none;
+    }
+
+    /* Meta a cuadros */
+    .finishLine {
+      position: absolute;
+      z-index: 5;
+      bottom: 112px;
+      left: 86%;
+      width: 34px;
+      height: 96px;
+      opacity: 0;
+      background:
+        repeating-conic-gradient(#f8fafc 0% 25%, #111318 0% 50%) 0 0 / 17px 17px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+      transform: translateY(14px) scaleY(0.2);
+      transform-origin: 50% 100%;
+      transition: opacity 0.5s ease, transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .finishLine.show {
+      opacity: 1;
+      transform: none;
+    }
+
+    /* Coche principal */
+    .car {
+      --paint: #e8590c;
+      --paint-light: #ffb066;
+      position: absolute;
+      z-index: 6;
+      bottom: 127px;
+      left: 4%;
+      width: 104px;
+      height: 48px;
+      opacity: 0;
+      filter: drop-shadow(0 5px 8px rgba(0, 0, 0, 0.5));
+      transition: opacity 0.4s ease, left 1.5s cubic-bezier(0.35, 0.05, 0.25, 1);
+    }
+
+    .car.show {
+      opacity: 1;
+    }
+
+    .carBody {
+      position: absolute;
+      bottom: 7px;
+      left: 0;
+      width: 100%;
+      height: 23px;
+      border-radius: 7px 17px 7px 7px;
+      background: linear-gradient(165deg, var(--paint-light) 0%, var(--paint) 58%, #9a3412 100%);
+      box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.4);
+    }
+
+    .carCabin {
+      position: absolute;
+      bottom: 26px;
+      left: 24px;
+      width: 50px;
+      height: 17px;
+      border-radius: 11px 14px 2px 2px;
+      background: linear-gradient(165deg, var(--paint-light), var(--paint));
+      box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.35);
+    }
+
+    .carWindow {
+      position: absolute;
+      bottom: 29px;
+      left: 29px;
+      width: 38px;
+      height: 11px;
+      border-radius: 7px 10px 1px 1px;
+      background: linear-gradient(160deg, #cfe9ff, #5b8fc7);
+      opacity: 0.92;
+    }
+
+    .carFlame {
+      position: absolute;
+      bottom: 13px;
+      left: 6px;
+      width: 40px;
+      height: 9px;
+      background: linear-gradient(90deg, #fde047, #f97316);
+      clip-path: polygon(0 40%, 34% 0, 52% 52%, 78% 8%, 100% 46%, 84% 100%, 16% 100%);
+      opacity: 0.95;
+    }
+
+    .carWheel {
+      position: absolute;
+      bottom: 0;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle, #d4d4d8 0 5px, #18181b 6px 100%);
+      box-shadow: inset 0 0 0 2px #27272a;
+    }
+
+    .carWheel::after {
+      content: "";
+      position: absolute;
+      inset: 6px;
+      border-radius: 50%;
+      background:
+        conic-gradient(#e4e4e7 0 12%, #a1a1aa 12% 25%, #e4e4e7 25% 37%, #a1a1aa 37% 50%, #e4e4e7 50% 62%, #a1a1aa 62% 75%, #e4e4e7 75% 87%, #a1a1aa 87% 100%);
+    }
+
+    .carWheel.rear {
+      left: 11px;
+    }
+
+    .carWheel.front {
+      right: 9px;
+    }
+
+    .car.rolling .carWheel::after {
+      animation: wheel-spin 0.4s linear infinite;
+    }
+
+    @keyframes wheel-spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .car.revving {
+      animation: engine-shake 0.16s ease-in-out infinite;
+    }
+
+    @keyframes engine-shake {
+      0%, 100% {
+        transform: translateY(0) rotate(0deg);
+      }
+      50% {
+        transform: translateY(-1.5px) rotate(-0.5deg);
+      }
+    }
+
+    /* Líneas de velocidad */
+    .speed {
+      position: absolute;
+      top: 6px;
+      right: 104%;
+      width: 46px;
+      height: 30px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .car.rolling .speed {
+      opacity: 1;
+    }
+
+    .speed span {
+      position: absolute;
+      right: 0;
+      height: 3px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(255, 224, 196, 0), #ffd0a8);
+      animation: whoosh 0.55s ease-out infinite;
+    }
+
+    .speed span:nth-child(1) {
+      top: 4px;
+      width: 40px;
+      animation-delay: 0s;
+    }
+
+    .speed span:nth-child(2) {
+      top: 14px;
+      width: 28px;
+      animation-delay: 0.14s;
+    }
+
+    .speed span:nth-child(3) {
+      top: 23px;
+      width: 34px;
+      animation-delay: 0.28s;
+    }
+
+    @keyframes whoosh {
+      0% {
+        opacity: 0;
+        transform: translateX(14px);
+      }
+      40% {
+        opacity: 0.95;
+      }
+      100% {
+        opacity: 0;
+        transform: translateX(-10px);
+      }
+    }
+
+    /* Coche que recorre el rizo */
+    .loopRunner {
+      position: absolute;
+      z-index: 6;
+      bottom: 186px;
+      left: 54%;
+      width: 0;
+      height: 0;
+      opacity: 0;
+    }
+
+    .loopRunner.show {
+      opacity: 1;
+    }
+
+    .loopRunner.looping {
+      animation: loop-run 1.9s cubic-bezier(0.45, 0.05, 0.55, 0.95) forwards;
+    }
+
+    @keyframes loop-run {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(-360deg);
+      }
+    }
+
+    .loopRunner .car {
+      bottom: auto;
+      left: auto;
+      top: 0;
+      opacity: 1;
+      transition: none;
+      transform: translate(-50%, -50%) translateY(46px);
+    }
+
+    /* Colección de carritos */
+    .collection {
+      position: absolute;
+      z-index: 2;
+      bottom: 52px;
+      left: 0;
+      width: 100%;
+      height: 46px;
+      pointer-events: none;
+    }
+
+    .miniCar {
+      --paint: #ef4444;
+      --paint-light: #fca5a5;
+      --pop-delay: 0s;
+      position: absolute;
+      bottom: 0;
+      width: 64px;
+      height: 30px;
+      opacity: 0;
+      filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.5));
+      transform: translateY(12px) scale(0.35);
+      transform-origin: 50% 100%;
+      transition: opacity 0.5s ease, transform 0.75s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .collection.show .miniCar {
+      opacity: 1;
+      transform: none;
+      transition-delay: var(--pop-delay);
+    }
+
+    .miniBody {
+      position: absolute;
+      bottom: 5px;
+      left: 0;
+      width: 100%;
+      height: 14px;
+      border-radius: 4px 11px 4px 4px;
+      background: linear-gradient(165deg, var(--paint-light), var(--paint) 62%, rgba(0, 0, 0, 0.35));
+      box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.4);
+    }
+
+    .miniCabin {
+      position: absolute;
+      bottom: 16px;
+      left: 15px;
+      width: 31px;
+      height: 10px;
+      border-radius: 7px 9px 1px 1px;
+      background: linear-gradient(165deg, var(--paint-light), var(--paint));
+    }
+
+    .miniWindow {
+      position: absolute;
+      bottom: 18px;
+      left: 18px;
+      width: 23px;
+      height: 6px;
+      border-radius: 4px 6px 1px 1px;
+      background: linear-gradient(160deg, #cfe9ff, #5b8fc7);
+    }
+
+    .miniWheel {
+      position: absolute;
+      bottom: 0;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #d4d4d8 0 3px, #18181b 4px 100%);
+    }
+
+    .miniWheel.rear {
+      left: 7px;
+    }
+
+    .miniWheel.front {
+      right: 6px;
+    }
+
+    .miniCar.m1 {
+      left: 3%;
+      --paint: #dc2626;
+      --paint-light: #fca5a5;
+      --pop-delay: 0.1s;
+    }
+
+    .miniCar.m2 {
+      left: 22%;
+      --paint: #2563eb;
+      --paint-light: #93c5fd;
+      --pop-delay: 0.26s;
+    }
+
+    .miniCar.m3 {
+      left: 41%;
+      --paint: #16a34a;
+      --paint-light: #86efac;
+      --pop-delay: 0.42s;
+    }
+
+    .miniCar.m4 {
+      left: 60%;
+      --paint: #9333ea;
+      --paint-light: #d8b4fe;
+      --pop-delay: 0.58s;
+    }
+
+    .miniCar.m5 {
+      left: 79%;
+      --paint: #eab308;
+      --paint-light: #fde68a;
+      --pop-delay: 0.74s;
+    }
+
+    /* Trofeo */
+    .trophy {
+      position: absolute;
+      z-index: 8;
+      bottom: 232px;
+      left: 50%;
+      width: 58px;
+      height: 74px;
+      opacity: 0;
+      filter: drop-shadow(0 5px 9px rgba(0, 0, 0, 0.5));
+      transform: translateX(-50%) translateY(14px) scale(0.3);
+      transition: opacity 0.6s ease, transform 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .trophy.show {
+      opacity: 1;
+      transform: translateX(-50%);
+      transition-delay: 1s;
+    }
+
+    .trophyCup {
+      position: absolute;
+      top: 6px;
+      left: 9px;
+      width: 40px;
+      height: 36px;
+      border-radius: 5px 5px 50% 50% / 5px 5px 78% 78%;
+      background: linear-gradient(160deg, #fef08a 0%, #facc15 48%, #b45309 100%);
+      box-shadow: inset 0 3px 5px rgba(255, 255, 255, 0.55);
+    }
+
+    .trophyHandle {
+      position: absolute;
+      top: 11px;
+      width: 15px;
+      height: 20px;
+      border: 4px solid #eab308;
+      border-radius: 50%;
+    }
+
+    .trophyHandle.l {
+      left: -2px;
+      border-right-color: transparent;
+    }
+
+    .trophyHandle.r {
+      right: -2px;
+      border-left-color: transparent;
+    }
+
+    .trophyStem {
+      position: absolute;
+      top: 41px;
+      left: 50%;
+      width: 10px;
+      height: 16px;
+      background: linear-gradient(90deg, #b45309, #facc15, #b45309);
+      transform: translateX(-50%);
+    }
+
+    .trophyBase {
+      position: absolute;
+      top: 56px;
+      left: 50%;
+      width: 40px;
+      height: 10px;
+      border-radius: 4px;
+      background: linear-gradient(180deg, #facc15, #92400e);
+      transform: translateX(-50%);
+    }
+
+    .final {
+      position: absolute;
+      z-index: 11;
+      top: 82px;
+      right: 25px;
+      left: 25px;
+      margin: 0;
+      opacity: 0;
+      color: #fff3e6;
+      font-size: clamp(1.1rem, 4.5vw, 1.3rem);
+      font-weight: 700;
+      line-height: 1.45;
+      text-align: center;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
+      transform: translateY(10px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+
+    .final.show {
+      opacity: 1;
+      transform: none;
+    }
+
+    /* Collage final */
+    .photoWrap {
+      position: absolute;
+      z-index: 15;
+      inset: 0;
+      visibility: hidden;
+      padding: clamp(20px, 5vw, 30px) clamp(16px, 4.5vw, 24px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      background: linear-gradient(180deg, #2b2135 0%, #3a2a2a 55%, #24262f 100%);
+      transition: opacity 0.7s ease, visibility 0s linear 0.7s;
+    }
+
+    .photoWrap.show {
+      visibility: visible;
+      opacity: 1;
+      pointer-events: auto;
+      transition-delay: 0s;
+    }
+
+    .polaroid {
+      width: min(88%, 410px);
+      padding: 14px 14px 38px;
+      border-radius: 6px;
+      background: #fff8f1;
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55);
+      transform: rotate(-2deg) scale(0.9);
+      transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .photoWrap.show .polaroid {
+      transform: rotate(-2deg) scale(1);
+    }
+
+    .polaroid img {
+      display: block;
+      width: 100%;
+      max-height: min(300px, 45dvh);
+      border-radius: 2px;
+      background: #f2e2d2;
+      object-fit: contain;
+    }
+
+    .photoFallback {
+      min-height: 220px;
+      padding: 24px;
+      display: grid;
+      place-items: center;
+      border-radius: 2px;
+      background: #f2e2d2;
+      color: #7a4a2a;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .photoFallback[hidden] {
+      display: none;
+    }
+
+    .polaroid .cap {
+      margin: 12px 0 0;
+      color: #7a2f0b;
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+
+    .photoWrap .msg,
+    .videoWrap .msg {
+      margin: 18px 0 0;
+      color: #ffd7b5;
+      font-size: 16px;
+      font-weight: 650;
+      line-height: 1.4;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+    }
+
+    /* Video final */
+    .videoWrap {
+      position: absolute;
+      z-index: 16;
+      inset: 0;
+      visibility: hidden;
+      padding: clamp(20px, 5vw, 30px) clamp(16px, 4.5vw, 24px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      background: linear-gradient(180deg, #2b2135 0%, #3a2a2a 55%, #24262f 100%);
+      transition: opacity 0.7s ease, visibility 0s linear 0.7s;
+    }
+
+    .videoWrap.show {
+      visibility: visible;
+      opacity: 1;
+      pointer-events: auto;
+      transition-delay: 0s;
+    }
+
+    .screen {
+      width: min(92%, 420px);
+      padding: 12px 12px 14px;
+      border-radius: 16px;
+      background: #fff8f1;
+      box-shadow:
+        inset 0 0 0 3px #e8590c,
+        0 14px 34px rgba(0, 0, 0, 0.55);
+      transform: scale(0.92);
+      transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .videoWrap.show .screen {
+      transform: none;
+    }
+
+    .screen video {
+      display: block;
+      width: 100%;
+      max-height: min(292px, 44dvh);
+      border-radius: 9px;
+      background: #1b1b20;
+      object-fit: contain;
+    }
+
+    .videoFallback {
+      min-height: 200px;
+      padding: 24px;
+      display: grid;
+      place-items: center;
+      border-radius: 9px;
+      background: #f2e2d2;
+      color: #7a4a2a;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .videoFallback[hidden] {
+      display: none;
+    }
+
+    .screen .cap {
+      margin: 11px 0 0;
+      color: #7a2f0b;
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+
+    .button {
+      min-height: 48px;
+      margin-top: 17px;
+      padding: 13px 25px;
+      border: 0;
+      border-radius: 999px;
+      background: #e8590c;
+      color: #fff;
+      box-shadow: 0 6px 18px rgba(232, 89, 12, 0.4);
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 700;
+      transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    .button:hover:not(:disabled) {
+      background: #d14e08;
+      box-shadow: 0 8px 22px rgba(209, 78, 8, 0.46);
+      transform: translateY(-1px);
+    }
+
+    .button:active:not(:disabled) {
+      transform: translateY(0) scale(0.98);
+    }
+
+    .button:disabled {
+      opacity: 0.72;
+      cursor: wait;
+    }
+
+    .button:focus-visible,
+    .musicBtn:focus-visible {
+      outline: 3px solid #ffd0a8;
+      outline-offset: 3px;
+    }
+
+    @media (min-height: 740px) {
+      body {
+        align-items: center;
+      }
+    }
+
+    @media (max-width: 380px) {
+      body {
+        padding: 10px;
+      }
+
+      .scene {
+        border-radius: 24px;
+      }
+
+      .text {
+        top: 48px;
+        right: 18px;
+        left: 18px;
+      }
+
+      .final {
+        right: 18px;
+        left: 18px;
+      }
+
+      .polaroid {
+        width: 96%;
+      }
+
+      .loop {
+        width: 112px;
+        height: 112px;
+        margin-left: -56px;
+      }
+
+      .loopRunner {
+        bottom: 178px;
+      }
+
+      .loopRunner .car {
+        transform: translate(-50%, -50%) translateY(39px) scale(0.86);
+      }
+
+      .car {
+        width: 92px;
+      }
+
+      .miniCar {
+        width: 54px;
+      }
+
+      .miniCar.m5 {
+        left: 78%;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        transition-delay: 0s !important;
+      }
+
+      .spark {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <h1 class="sr-only" id="pageTitle">Una pista Hot Wheels para ti</h1>
+
+    <section class="scene" id="scene" aria-labelledby="pageTitle">
+      <button
+        class="musicBtn"
+        id="musicBtn"
+        type="button"
+        title="Reproducir canción de Spotify"
+        aria-label="Reproducir canción de Spotify"
+        aria-controls="spotifyPanel"
+        aria-expanded="false"
+        aria-pressed="false"
+      >🎵</button>
+
+      <div class="sky" aria-hidden="true"></div>
+      <div class="sparks" id="sparks" aria-hidden="true"></div>
+      <p class="text" id="txt" aria-live="polite" aria-atomic="true" aria-hidden="true"></p>
+      <p class="final" id="final" aria-hidden="true">
+        Gracias por dejarme conocer<br>
+        <span>al niño feliz que vive en ti. 🧡</span>
+      </p>
+
+      <div class="startLights" id="startLights" aria-hidden="true">
+        <div class="lamp red"></div>
+        <div class="lamp amber"></div>
+        <div class="lamp green"></div>
+      </div>
+
+      <div class="loop" id="loop" aria-hidden="true"></div>
+
+      <div class="loopRunner" id="loopRunner" aria-hidden="true">
+        <div class="car rolling">
+          <div class="carBody"></div>
+          <div class="carCabin"></div>
+          <div class="carWindow"></div>
+          <div class="carFlame"></div>
+          <div class="carWheel rear"></div>
+          <div class="carWheel front"></div>
+        </div>
+      </div>
+
+      <div class="finishLine" id="finishLine" aria-hidden="true"></div>
+
+      <div class="trophy" id="trophy" aria-hidden="true">
+        <div class="trophyHandle l"></div>
+        <div class="trophyHandle r"></div>
+        <div class="trophyCup"></div>
+        <div class="trophyStem"></div>
+        <div class="trophyBase"></div>
+      </div>
+
+      <div class="car" id="car" aria-hidden="true">
+        <div class="speed"><span></span><span></span><span></span></div>
+        <div class="carBody"></div>
+        <div class="carCabin"></div>
+        <div class="carWindow"></div>
+        <div class="carFlame"></div>
+        <div class="carWheel rear"></div>
+        <div class="carWheel front"></div>
+      </div>
+
+      <div class="trackSeg s1" id="seg1" aria-hidden="true"></div>
+      <div class="trackSeg s2" id="seg2" aria-hidden="true"></div>
+      <div class="trackSeg s3" id="seg3" aria-hidden="true"></div>
+
+      <div class="collection" id="collection" aria-hidden="true">
+        <div class="miniCar m1">
+          <div class="miniBody"></div>
+          <div class="miniCabin"></div>
+          <div class="miniWindow"></div>
+          <div class="miniWheel rear"></div>
+          <div class="miniWheel front"></div>
+        </div>
+        <div class="miniCar m2">
+          <div class="miniBody"></div>
+          <div class="miniCabin"></div>
+          <div class="miniWindow"></div>
+          <div class="miniWheel rear"></div>
+          <div class="miniWheel front"></div>
+        </div>
+        <div class="miniCar m3">
+          <div class="miniBody"></div>
+          <div class="miniCabin"></div>
+          <div class="miniWindow"></div>
+          <div class="miniWheel rear"></div>
+          <div class="miniWheel front"></div>
+        </div>
+        <div class="miniCar m4">
+          <div class="miniBody"></div>
+          <div class="miniCabin"></div>
+          <div class="miniWindow"></div>
+          <div class="miniWheel rear"></div>
+          <div class="miniWheel front"></div>
+        </div>
+        <div class="miniCar m5">
+          <div class="miniBody"></div>
+          <div class="miniCabin"></div>
+          <div class="miniWindow"></div>
+          <div class="miniWheel rear"></div>
+          <div class="miniWheel front"></div>
+        </div>
+      </div>
+
+      <div class="ground" aria-hidden="true"></div>
+
+      <div class="photoWrap" id="photoWrap" aria-hidden="true">
+        <div class="polaroid">
+          <img
+            id="collage"
+            src="imagenes/collage-sorpresa.jpeg"
+            alt="Collage de cinco fotos: paseos en Jeep, al volante y en un go-kart"
+          >
+          <div class="photoFallback" id="photoFallback" role="img" aria-label="Foto pendiente" hidden>
+            Agrega tu foto en <strong>imagenes/collage-sorpresa.jpeg</strong>
+          </div>
+          <p class="cap">Feliz día Mor 🏎️🥇</p>
+        </div>
+        <p class="msg">🏁 #DíaDeRegalarleUnHotWheels 🏁</p>
+      </div>
+
+      <div class="videoWrap" id="videoWrap" aria-hidden="true">
+        <div class="screen">
+          <video
+            id="clip"
+            src="video/clip.mp4"
+            loop
+            muted
+            playsinline
+            controls
+            preload="metadata"
+            aria-label="Video corto de un recuerdo nuestro"
+          ></video>
+          <div class="videoFallback" id="videoFallback" role="img" aria-label="Video pendiente" hidden>
+            Agrega tu video en <strong>video/clip.mp4</strong>
+          </div>
+          <p class="cap">Y un último recuerdo 🎥</p>
+        </div>
+        <p class="msg">🏁 Te quiero, Mor 🧡</p>
+      </div>
+    </section>
+
+    <div
+      class="spotifyPanel"
+      id="spotifyPanel"
+      role="region"
+      aria-label="Reproductor de Spotify"
+      aria-hidden="true"
+      inert
+    >
+      <div class="spotifyEmbed" id="spotifyEmbed"></div>
+      <a
+        class="spotifyFallback"
+        href="https://open.spotify.com/track/5gB2IrxOCX2j9bMnHKP38i?si=adb2af8b1d8c4ea4"
+        target="_blank"
+        rel="noopener noreferrer"
+      >Si no inicia, abrir la canción en Spotify ↗</a>
+    </div>
+
+    <button
+      class="button"
+      id="next"
+      type="button"
+      aria-controls="scene"
+      aria-busy="false"
+    >Arrancar 🏁</button>
+  </main>
+
+  <script>
+    const txt = document.getElementById('txt');
+    const btn = document.getElementById('next');
+    const startLights = document.getElementById('startLights');
+    const seg1 = document.getElementById('seg1');
+    const seg2 = document.getElementById('seg2');
+    const seg3 = document.getElementById('seg3');
+    const loop = document.getElementById('loop');
+    const loopRunner = document.getElementById('loopRunner');
+    const car = document.getElementById('car');
+    const finishLine = document.getElementById('finishLine');
+    const trophy = document.getElementById('trophy');
+    const collection = document.getElementById('collection');
+    const final = document.getElementById('final');
+    const photoWrap = document.getElementById('photoWrap');
+    const videoWrap = document.getElementById('videoWrap');
+    const clip = document.getElementById('clip');
+    const videoFallback = document.getElementById('videoFallback');
+    const musicBtn = document.getElementById('musicBtn');
+    const spotifyPanel = document.getElementById('spotifyPanel');
+    const spotifyEmbed = document.getElementById('spotifyEmbed');
+    const sparksBox = document.getElementById('sparks');
+    const collage = document.getElementById('collage');
+    const photoFallback = document.getElementById('photoFallback');
+    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const spotifyTrackUri = 'spotify:track:5gB2IrxOCX2j9bMnHKP38i';
+
+    const phrases = [
+      'Mor, hoy 30 de septiembre es una fecha importante…',
+      'Hoy la mercadotecnia dice que se le regala un Hot Wheels a tu novio.',
+      'Un detalle chiquito pero lleno de cariño. 🧡',
+      'Y obvio no podía permitir que seas espectador, así que...',
+      'Hoy te regalo uno, me gusta ver al niño que sigue viviendo en ti y que se emociona con los carritos',
+      'Recuerda : Más que un carrito, es mi forma de decirte: me importas y te quiero. 🏎️🧡'
+    ];
+
+    const startPhraseIndex = 0;
+    const launchPhraseIndex = 1;
+    const loopPhraseIndex = 2;
+    const finishPhraseIndex = 3;
+    const giftPhraseIndex = phrases.length - 2;
+    const lastPhraseIndex = phrases.length - 1;
+
+    /*
+      El botón se desbloquea pasado el tiempo de lectura. Se calcula según el
+      largo de la frase, así no hay que ajustarlo a mano al editar los textos.
+      Las etapas con animación larga imponen un mínimo para no cortarlas.
+    */
+    const baseReadingTime = 1500;
+    const msPerCharacter = 38;
+    const minimumStageReadingTime = {
+      /* El coche tarda ~2.6 s en entrar y completar el rizo. */
+      [loopPhraseIndex]: 2800,
+      /* La colección y el trofeo terminan de aparecer cerca de los 3.9 s. */
+      [giftPhraseIndex]: 4200
+    };
+
+    function readingTimeFor(index) {
+      const byLength = baseReadingTime + phrases[index].length * msPerCharacter;
+      return Math.max(byLength, minimumStageReadingTime[index] ?? 0);
+    }
+
+    const carStartLeft = '4%';
+    const carLoopEntryLeft = '40%';
+    const carLoopExitLeft = '66%';
+    const carFinishLeft = '80%';
+    const loopRunDuration = 1900;
+
+    let currentPhrase = -1;
+    let busy = false;
+    let finalShown = false;
+    let photoShown = false;
+    let videoShown = false;
+    let sparksTimer = null;
+    let spotifyController = null;
+    let spotifyReady = false;
+    let spotifyPlaying = false;
+    let spotifyPlaybackRequested = false;
+    let spotifyManuallyPaused = false;
+    let spotifyPanelHideTimer = null;
+    const pendingTimers = new Set();
+
+    function motionDelay(milliseconds) {
+      return motionQuery.matches ? 0 : milliseconds;
+    }
+
+    function schedule(callback, milliseconds, preserveDelay = false) {
+      const delay = preserveDelay ? milliseconds : motionDelay(milliseconds);
+      const timer = window.setTimeout(() => {
+        pendingTimers.delete(timer);
+        callback();
+      }, delay);
+      pendingTimers.add(timer);
+      return timer;
+    }
+
+    function clearPendingTimers() {
+      pendingTimers.forEach((timer) => window.clearTimeout(timer));
+      pendingTimers.clear();
+    }
+
+    function setBusy(isBusy) {
+      busy = isBusy;
+      btn.disabled = isBusy;
+      btn.setAttribute('aria-busy', String(isBusy));
+    }
+
+    function setVisible(element, isVisible) {
+      element.classList.toggle('show', isVisible);
+      element.setAttribute('aria-hidden', String(!isVisible));
+    }
+
+    function runLoopStage() {
+      /* El coche de la recta se oculta y el del rizo toma el relevo. */
+      car.classList.remove('rolling');
+      car.classList.remove('show');
+
+      loopRunner.classList.remove('looping');
+      loopRunner.classList.add('show');
+      /* Reinicia la animación para que se pueda repetir tras un reset. */
+      void loopRunner.offsetWidth;
+      loopRunner.classList.add('looping');
+
+      schedule(() => {
+        loopRunner.classList.remove('show', 'looping');
+        car.style.left = carLoopExitLeft;
+        car.classList.add('show', 'rolling');
+      }, loopRunDuration, true);
+    }
+
+    function applyRaceStage(index) {
+      if (index === startPhraseIndex) {
+        car.style.left = carStartLeft;
+        car.classList.add('show', 'revving');
+        car.classList.remove('rolling');
+        setVisible(startLights, true);
+        startLights.classList.remove('hide', 'stage-2', 'stage-3');
+        startLights.classList.add('stage-1');
+        seg1.classList.add('show');
+        schedule(() => startLights.classList.add('stage-2'), 700, true);
+      }
+
+      if (index === launchPhraseIndex) {
+        startLights.classList.add('stage-3');
+        car.classList.remove('revving');
+        car.classList.add('rolling');
+        seg2.classList.add('show');
+        schedule(() => {
+          car.style.left = carLoopEntryLeft;
+          startLights.classList.add('hide');
+        }, 350, true);
+      }
+
+      if (index === loopPhraseIndex) {
+        loop.classList.add('show');
+        seg3.classList.add('show');
+        schedule(runLoopStage, 700, true);
+      }
+
+      if (index === finishPhraseIndex) {
+        finishLine.classList.add('show');
+        car.classList.add('show', 'rolling');
+        schedule(() => {
+          car.style.left = carFinishLeft;
+        }, 250, true);
+      }
+
+      if (index === giftPhraseIndex) {
+        car.classList.remove('rolling');
+        setVisible(collection, true);
+        trophy.classList.add('show');
+      }
+    }
+
+    function reset() {
+      clearPendingTimers();
+      currentPhrase = -1;
+      finalShown = false;
+      photoShown = false;
+      videoShown = false;
+      txt.textContent = '';
+      stopClip();
+      setVisible(txt, false);
+      setVisible(final, false);
+      setVisible(photoWrap, false);
+      setVisible(videoWrap, false);
+      setVisible(collection, false);
+      setVisible(startLights, false);
+      startLights.classList.remove('hide', 'stage-1', 'stage-2', 'stage-3');
+      seg1.classList.remove('show');
+      seg2.classList.remove('show');
+      seg3.classList.remove('show');
+      loop.classList.remove('show');
+      loopRunner.classList.remove('show', 'looping');
+      finishLine.classList.remove('show');
+      trophy.classList.remove('show');
+      car.classList.remove('show', 'rolling', 'revving');
+      car.style.left = carStartLeft;
+      btn.textContent = 'Arrancar 🏁';
+      setBusy(false);
+    }
+
+    function showPhrase(index) {
+      clearPendingTimers();
+      finalShown = false;
+      setBusy(true);
+      setVisible(final, false);
+      setVisible(txt, false);
+      btn.textContent = 'Siguiente';
+
+      schedule(() => {
+        txt.textContent = phrases[index];
+        setVisible(txt, true);
+        applyRaceStage(index);
+
+        const readingTime = readingTimeFor(index);
+
+        if (readingTime > 0) {
+          schedule(() => setBusy(false), readingTime, true);
+          return;
+        }
+
+        setBusy(false);
+      }, 280);
+    }
+
+    function showFinalMessage() {
+      clearPendingTimers();
+      setBusy(true);
+      setVisible(txt, false);
+      btn.textContent = 'Siguiente';
+
+      schedule(() => {
+        setVisible(final, true);
+        finalShown = true;
+        btn.textContent = 'Ver nuestra foto 🥰';
+        setBusy(false);
+      }, 500);
+    }
+
+    function showPhoto() {
+      clearPendingTimers();
+      setBusy(true);
+      setVisible(final, false);
+
+      schedule(() => {
+        setVisible(photoWrap, true);
+        photoShown = true;
+        btn.textContent = 'Ver el video 🎥';
+        setBusy(false);
+      }, 500);
+    }
+
+    function stopClip() {
+      clip.pause();
+      /* currentTime lanza error si todavía no hay metadatos cargados. */
+      if (clip.readyState > 0) {
+        clip.currentTime = 0;
+      }
+    }
+
+    function showVideo() {
+      clearPendingTimers();
+      setBusy(true);
+      setVisible(photoWrap, false);
+
+      schedule(() => {
+        setVisible(videoWrap, true);
+        videoShown = true;
+        btn.textContent = 'Otra vuelta 🏁';
+        setBusy(false);
+
+        /*
+          El clip dura ~1 s y va en silencio, así que se reproduce en bucle
+          como un GIF. Si el visitante pidió menos movimiento, se queda quieto
+          y puede iniciarlo con los controles.
+        */
+        if (!motionQuery.matches) {
+          const started = clip.play();
+          if (started && typeof started.catch === 'function') {
+            started.catch(() => {
+              /* Si el navegador lo bloquea, quedan los controles visibles. */
+            });
+          }
+        }
+      }, 500);
+    }
+
+    function next() {
+      if (busy) {
+        return;
+      }
+
+      if (currentPhrase === -1 && !spotifyPlaying && !spotifyManuallyPaused) {
+        requestSpotifyPlayback();
+      }
+
+      if (videoShown) {
+        reset();
+        return;
+      }
+      if (photoShown) {
+        showVideo();
+        return;
+      }
+      if (finalShown) {
+        showPhoto();
+        return;
+      }
+      if (currentPhrase === lastPhraseIndex) {
+        showFinalMessage();
+        return;
+      }
+
+      currentPhrase += 1;
+      showPhrase(currentPhrase);
+    }
+
+    function clearSpotifyPanelHideTimer() {
+      if (spotifyPanelHideTimer !== null) {
+        window.clearTimeout(spotifyPanelHideTimer);
+        spotifyPanelHideTimer = null;
+      }
+    }
+
+    function showSpotifyPanel() {
+      clearSpotifyPanelHideTimer();
+      document.body.classList.add('spotify-open');
+      spotifyPanel.classList.add('show');
+      spotifyPanel.setAttribute('aria-hidden', 'false');
+      spotifyPanel.inert = false;
+      musicBtn.setAttribute('aria-expanded', 'true');
+    }
+
+    function hideSpotifyPanel() {
+      clearSpotifyPanelHideTimer();
+      document.body.classList.remove('spotify-open');
+      spotifyPanel.classList.remove('show');
+      spotifyPanel.setAttribute('aria-hidden', 'true');
+      spotifyPanel.inert = true;
+      musicBtn.setAttribute('aria-expanded', 'false');
+    }
+
+    function scheduleSpotifyPanelHide() {
+      if (!spotifyPanel.classList.contains('show') || spotifyPanelHideTimer !== null) {
+        return;
+      }
+
+      spotifyPanelHideTimer = window.setTimeout(() => {
+        spotifyPanelHideTimer = null;
+        if (spotifyPlaying) {
+          hideSpotifyPanel();
+        }
+      }, 650);
+    }
+
+    function updateSpotifyButton() {
+      musicBtn.textContent = spotifyPlaying ? '⏸' : '🎵';
+      musicBtn.classList.toggle('playing', spotifyPlaying);
+      musicBtn.setAttribute('aria-pressed', String(spotifyPlaying));
+      const label = spotifyPlaying
+        ? 'Pausar canción de Spotify'
+        : 'Reproducir canción de Spotify';
+      musicBtn.setAttribute('aria-label', label);
+      musicBtn.title = label;
+    }
+
+    function requestSpotifyPlayback() {
+      showSpotifyPanel();
+      spotifyPlaybackRequested = true;
+
+      if (spotifyController && spotifyReady) {
+        try {
+          spotifyController.play();
+        } catch (error) {
+          /* El reproductor visible permite iniciar la canción manualmente. */
+        }
+      }
+    }
+
+    function toggleSpotifyPlayback() {
+      if (!spotifyController || !spotifyReady) {
+        showSpotifyPanel();
+        spotifyManuallyPaused = false;
+        spotifyPlaybackRequested = true;
+        return;
+      }
+
+      try {
+        if (spotifyPlaying) {
+          clearSpotifyPanelHideTimer();
+          spotifyManuallyPaused = true;
+          spotifyPlaybackRequested = false;
+          spotifyPlaying = false;
+          updateSpotifyButton();
+          spotifyController.pause();
+        } else {
+          spotifyManuallyPaused = false;
+          spotifyPlaybackRequested = true;
+          spotifyController.resume();
+        }
+      } catch (error) {
+        showSpotifyPanel();
+        /* El usuario todavía puede utilizar los controles del Embed. */
+      }
+    }
+
+    window.onSpotifyIframeApiReady = (IFrameAPI) => {
+      const options = {
+        uri: spotifyTrackUri,
+        width: '100%',
+        height: 152
+      };
+
+      IFrameAPI.createController(spotifyEmbed, options, (EmbedController) => {
+        spotifyController = EmbedController;
+
+        EmbedController.addListener('ready', () => {
+          spotifyReady = true;
+          if (spotifyPlaybackRequested && !spotifyManuallyPaused) {
+            try {
+              EmbedController.play();
+            } catch (error) {
+              /* El reproductor visible funciona como respaldo. */
+            }
+          }
+        });
+
+        EmbedController.addListener('playback_started', () => {
+          spotifyPlaying = true;
+          spotifyPlaybackRequested = false;
+          updateSpotifyButton();
+          scheduleSpotifyPanelHide();
+        });
+
+        EmbedController.addListener('playback_update', (event) => {
+          if (!event?.data || typeof event.data.isPaused !== 'boolean') {
+            return;
+          }
+
+          spotifyPlaying = !event.data.isPaused;
+          if (spotifyPlaying) {
+            spotifyPlaybackRequested = false;
+            scheduleSpotifyPanelHide();
+          } else {
+            clearSpotifyPanelHideTimer();
+          }
+          updateSpotifyButton();
+        });
+      });
+    };
+
+    function spawnSpark() {
+      const spark = document.createElement('div');
+      const icons = ['🔥', '🏁', '⚡', '🧡'];
+      spark.className = 'spark';
+      spark.textContent = icons[Math.floor(Math.random() * icons.length)];
+      spark.style.left = `${5 + Math.random() * 90}%`;
+      spark.style.setProperty('--drift', `${Math.random() * 40 - 20}px`);
+      spark.style.animationDuration = `${6 + Math.random() * 3}s`;
+      spark.addEventListener('animationend', () => spark.remove(), { once: true });
+      sparksBox.appendChild(spark);
+    }
+
+    function syncSparks() {
+      if (sparksTimer !== null) {
+        window.clearInterval(sparksTimer);
+        sparksTimer = null;
+      }
+
+      if (motionQuery.matches || document.hidden) {
+        sparksBox.replaceChildren();
+        return;
+      }
+
+      spawnSpark();
+      sparksTimer = window.setInterval(spawnSpark, 900);
+    }
+
+    musicBtn.addEventListener('click', toggleSpotifyPlayback);
+    btn.addEventListener('click', next);
+    document.addEventListener('visibilitychange', syncSparks);
+
+    if (typeof motionQuery.addEventListener === 'function') {
+      motionQuery.addEventListener('change', syncSparks);
+    } else {
+      motionQuery.addListener(syncSparks);
+    }
+
+    collage.addEventListener('error', () => {
+      collage.hidden = true;
+      photoFallback.hidden = false;
+    }, { once: true });
+
+    clip.addEventListener('error', () => {
+      clip.hidden = true;
+      videoFallback.hidden = false;
+    }, { once: true });
+
+    syncSparks();
+  </script>
+  <script src="https://open.spotify.com/embed/iframe-api/v1" async></script>
+</body>
+</html>
