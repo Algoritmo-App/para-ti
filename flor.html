@@ -406,6 +406,7 @@
       width: 145px;
       height: 145px;
       opacity: 0;
+      filter: drop-shadow(0 7px 10px rgba(44, 78, 118, 0.26));
       transform: translateX(-50%) scale(0.05);
       transition: opacity 0.9s ease, transform 1.25s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
@@ -584,16 +585,60 @@
       transition-delay: var(--bloom-delay);
     }
 
+    /*
+      Pétalos. El transform los ancla con transform-origin: 50% 100%, así que la
+      base queda en el centro de la flor y la punta apunta hacia afuera. De ahí
+      salen dos decisiones:
+        - El degradado va claro en la punta y oscuro en la base, que es como cae
+          la luz en un pétalo real (antes era un degradado diagonal plano).
+        - El border-radius es asimétrico en los dos ejes para que se angoste en
+          la base y se ensanche redondeado en la punta, en vez de ser un óvalo.
+
+      Las coronas traseras (.back) van ANTES en el marcado, no con z-index: cada
+      pétalo tiene transform y eso crea un contexto de apilamiento propio, así
+      que un z-index negativo quedaría encima y no detrás. El orden del DOM es
+      lo único que funciona aquí.
+    */
     .bouquetPetal {
       position: absolute;
       top: 50%;
       left: 50%;
-      width: 38px;
+      width: 37px;
       height: 58px;
-      border-radius: 65% 35% 65% 35%;
-      background: linear-gradient(145deg, #c3e4fb, #4b82c2);
-      box-shadow: inset 5px 3px 8px rgba(255, 255, 255, 0.32);
+      border-radius: 50% 50% 46% 46% / 62% 62% 38% 38%;
+      background:
+        radial-gradient(ellipse 72% 46% at 50% 15%, rgba(255, 255, 255, 0.55), transparent 72%),
+        linear-gradient(180deg, #e4f2fd 0%, #b8dbf8 34%, #78aadc 72%, #4d7fb6 100%);
+      box-shadow:
+        inset 0 -6px 9px rgba(38, 72, 116, 0.3),
+        0 1px 3px rgba(32, 60, 96, 0.16);
       transform-origin: 50% 100%;
+    }
+
+    /* Nervadura central del pétalo. */
+    .bouquetPetal::after,
+    .petal::after {
+      content: "";
+      position: absolute;
+      top: 17%;
+      bottom: 8%;
+      left: 50%;
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0));
+      transform: translateX(-50%);
+    }
+
+    .bouquetPetal::after {
+      width: 1.5px;
+    }
+
+    .bouquetPetal.back {
+      background: linear-gradient(180deg, #bedaf3 0%, #7ba3cf 58%, #46739f 100%);
+      box-shadow: none;
+    }
+
+    .bouquetPetal.back::after {
+      display: none;
     }
 
     .bp1 { transform: translate(-50%, -100%) rotate(0deg); }
@@ -602,15 +647,28 @@
     .bp4 { transform: translate(-50%, -100%) rotate(216deg); }
     .bp5 { transform: translate(-50%, -100%) rotate(288deg); }
 
+    /* Corona trasera: desfasada 36° para asomar justo en los huecos. */
+    .bpb1 { transform: translate(-50%, -100%) rotate(36deg) scale(0.9); }
+    .bpb2 { transform: translate(-50%, -100%) rotate(108deg) scale(0.9); }
+    .bpb3 { transform: translate(-50%, -100%) rotate(180deg) scale(0.9); }
+    .bpb4 { transform: translate(-50%, -100%) rotate(252deg) scale(0.9); }
+    .bpb5 { transform: translate(-50%, -100%) rotate(324deg) scale(0.9); }
+
     .bouquetCenter {
       position: absolute;
       top: 50%;
       left: 50%;
-      width: 27px;
-      height: 27px;
+      width: 26px;
+      height: 26px;
       border-radius: 50%;
-      background: #f2d477;
-      box-shadow: inset 2px 2px 4px rgba(255, 255, 255, 0.35);
+      background:
+        radial-gradient(circle, rgba(170, 120, 22, 0.5) 0 1.1px, transparent 1.6px) 0 0 / 5.5px 5.5px,
+        radial-gradient(circle at 36% 32%, #fff4cd 0%, #f6dc8a 38%, #e4b945 72%, #bd8f26 100%);
+      box-shadow:
+        inset 0 -3px 5px rgba(140, 100, 18, 0.42),
+        inset 0 2px 4px rgba(255, 255, 255, 0.5),
+        0 0 0 2px rgba(255, 255, 255, 0.28),
+        0 2px 5px rgba(36, 66, 104, 0.3);
       transform: translate(-50%, -50%);
     }
 
@@ -618,12 +676,29 @@
       position: absolute;
       top: 50%;
       left: 50%;
-      width: 57px;
+      width: 56px;
       height: 86px;
-      border-radius: 65% 35% 65% 35%;
-      background: linear-gradient(145deg, #b5dcf8, #4d83c3);
-      box-shadow: inset 7px 4px 12px rgba(255, 255, 255, 0.3);
+      border-radius: 50% 50% 46% 46% / 62% 62% 38% 38%;
+      background:
+        radial-gradient(ellipse 72% 48% at 50% 16%, rgba(255, 255, 255, 0.6), transparent 72%),
+        linear-gradient(180deg, #e2f1fd 0%, #b2d8f7 34%, #74a7da 72%, #4a7cb4 100%);
+      box-shadow:
+        inset 0 -8px 12px rgba(38, 72, 116, 0.32),
+        0 2px 5px rgba(32, 60, 96, 0.16);
       transform-origin: 50% 100%;
+    }
+
+    .petal::after {
+      width: 2px;
+    }
+
+    .petal.back {
+      background: linear-gradient(180deg, #bcd9f2 0%, #7ba3cf 58%, #44719f 100%);
+      box-shadow: none;
+    }
+
+    .petal.back::after {
+      display: none;
     }
 
     .p1 { transform: translate(-50%, -100%) rotate(0deg); }
@@ -632,14 +707,32 @@
     .p4 { transform: translate(-50%, -100%) rotate(216deg); }
     .p5 { transform: translate(-50%, -100%) rotate(288deg); }
 
+    .pb1 { transform: translate(-50%, -100%) rotate(36deg) scale(0.9); }
+    .pb2 { transform: translate(-50%, -100%) rotate(108deg) scale(0.9); }
+    .pb3 { transform: translate(-50%, -100%) rotate(180deg) scale(0.9); }
+    .pb4 { transform: translate(-50%, -100%) rotate(252deg) scale(0.9); }
+    .pb5 { transform: translate(-50%, -100%) rotate(324deg) scale(0.9); }
+
+    /*
+      Centro: un disco cálido con puntitos repetidos que leen como estambres,
+      más sombra interior abajo para que se hunda entre los pétalos y un aro
+      blanco tenue que lo separa de ellos. Antes era un círculo amarillo plano.
+    */
     .center {
       position: absolute;
       top: 50%;
       left: 50%;
-      width: 38px;
-      height: 38px;
+      width: 37px;
+      height: 37px;
       border-radius: 50%;
-      background: #f2d477;
+      background:
+        radial-gradient(circle, rgba(176, 124, 24, 0.55) 0 1.4px, transparent 1.9px) 0 0 / 7px 7px,
+        radial-gradient(circle at 36% 32%, #fff4cd 0%, #f6dc8a 38%, #e4b945 72%, #bd8f26 100%);
+      box-shadow:
+        inset 0 -4px 7px rgba(140, 100, 18, 0.45),
+        inset 0 3px 6px rgba(255, 255, 255, 0.55),
+        0 0 0 3px rgba(255, 255, 255, 0.3),
+        0 3px 8px rgba(36, 66, 104, 0.32);
       transform: translate(-50%, -50%);
     }
 
@@ -876,6 +969,11 @@
 
       <div class="seed" id="seed" aria-hidden="true"></div>
       <div class="flower" id="flower" aria-hidden="true">
+        <div class="petal back pb1"></div>
+        <div class="petal back pb2"></div>
+        <div class="petal back pb3"></div>
+        <div class="petal back pb4"></div>
+        <div class="petal back pb5"></div>
         <div class="petal p1"></div>
         <div class="petal p2"></div>
         <div class="petal p3"></div>
@@ -888,6 +986,11 @@
         <div class="bouquetBranch b1">
           <div class="bouquetLeaf to-right"></div>
           <div class="bouquetHead">
+            <div class="bouquetPetal back bpb1"></div>
+            <div class="bouquetPetal back bpb2"></div>
+            <div class="bouquetPetal back bpb3"></div>
+            <div class="bouquetPetal back bpb4"></div>
+            <div class="bouquetPetal back bpb5"></div>
             <div class="bouquetPetal bp1"></div>
             <div class="bouquetPetal bp2"></div>
             <div class="bouquetPetal bp3"></div>
@@ -899,6 +1002,11 @@
         <div class="bouquetBranch b2">
           <div class="bouquetLeaf to-left"></div>
           <div class="bouquetHead">
+            <div class="bouquetPetal back bpb1"></div>
+            <div class="bouquetPetal back bpb2"></div>
+            <div class="bouquetPetal back bpb3"></div>
+            <div class="bouquetPetal back bpb4"></div>
+            <div class="bouquetPetal back bpb5"></div>
             <div class="bouquetPetal bp1"></div>
             <div class="bouquetPetal bp2"></div>
             <div class="bouquetPetal bp3"></div>
@@ -910,6 +1018,11 @@
         <div class="bouquetBranch b3">
           <div class="bouquetLeaf to-right"></div>
           <div class="bouquetHead">
+            <div class="bouquetPetal back bpb1"></div>
+            <div class="bouquetPetal back bpb2"></div>
+            <div class="bouquetPetal back bpb3"></div>
+            <div class="bouquetPetal back bpb4"></div>
+            <div class="bouquetPetal back bpb5"></div>
             <div class="bouquetPetal bp1"></div>
             <div class="bouquetPetal bp2"></div>
             <div class="bouquetPetal bp3"></div>
@@ -921,6 +1034,11 @@
         <div class="bouquetBranch b4">
           <div class="bouquetLeaf to-left"></div>
           <div class="bouquetHead">
+            <div class="bouquetPetal back bpb1"></div>
+            <div class="bouquetPetal back bpb2"></div>
+            <div class="bouquetPetal back bpb3"></div>
+            <div class="bouquetPetal back bpb4"></div>
+            <div class="bouquetPetal back bpb5"></div>
             <div class="bouquetPetal bp1"></div>
             <div class="bouquetPetal bp2"></div>
             <div class="bouquetPetal bp3"></div>
