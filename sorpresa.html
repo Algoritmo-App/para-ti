@@ -37,7 +37,7 @@
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
-    body.spotify-open {
+    body.music-open {
       align-items: flex-start;
     }
 
@@ -173,7 +173,7 @@
       }
     }
 
-    .spotifyPanel {
+    .musicPanel {
       width: 100%;
       max-height: 0;
       margin-top: 0;
@@ -189,8 +189,8 @@
         visibility 0s linear 0.5s;
     }
 
-    .spotifyPanel.show {
-      max-height: 220px;
+    .musicPanel.show {
+      max-height: 280px;
       margin-top: 12px;
       visibility: visible;
       opacity: 1;
@@ -198,10 +198,10 @@
       transition-delay: 0s;
     }
 
-    .spotifyEmbed {
-      min-height: 152px;
-      display: grid;
-      place-items: center;
+    .musicEmbed {
+      position: relative;
+      aspect-ratio: 16 / 9;
+      max-height: 240px;
       overflow: hidden;
       border-radius: 12px;
       background: #121212;
@@ -209,21 +209,31 @@
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
     }
 
-    .spotifyEmbed:empty::before {
-      content: "Cargando Spotify…";
+    /* Aviso de carga: el iframe lo tapa al montarse encima. */
+    .musicEmbed::before {
+      content: "Cargando la canción…";
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
       font-size: 14px;
       font-weight: 600;
     }
 
-    .spotifyPanel iframe {
+    .musicEmbed > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    .musicPanel iframe {
       display: block;
       width: 100%;
-      height: 152px;
+      height: 100%;
       border: 0;
       border-radius: 12px;
     }
 
-    .spotifyFallback {
+    .musicFallback {
       display: inline-flex;
       align-items: center;
       min-height: 38px;
@@ -236,11 +246,11 @@
       text-decoration: none;
     }
 
-    .spotifyFallback:hover {
+    .musicFallback:hover {
       background: rgba(242, 102, 26, 0.16);
     }
 
-    .spotifyFallback:focus-visible {
+    .musicFallback:focus-visible {
       outline: 3px solid #ffb98a;
       outline-offset: 2px;
     }
@@ -1107,9 +1117,9 @@
         class="musicBtn"
         id="musicBtn"
         type="button"
-        title="Reproducir canción de Spotify"
-        aria-label="Reproducir canción de Spotify"
-        aria-controls="spotifyPanel"
+        title="Reproducir la canción"
+        aria-label="Reproducir la canción"
+        aria-controls="musicPanel"
         aria-expanded="false"
         aria-pressed="false"
       >🎵</button>
@@ -1242,20 +1252,26 @@
     </section>
 
     <div
-      class="spotifyPanel"
-      id="spotifyPanel"
+      class="musicPanel"
+      id="musicPanel"
       role="region"
-      aria-label="Reproductor de Spotify"
+      aria-label="Reproductor de música"
       aria-hidden="true"
       inert
     >
-      <div class="spotifyEmbed" id="spotifyEmbed"></div>
+      <!--
+        El div interno es el que YT.Player sustituye por su iframe, por eso va
+        envuelto: si se le pasara el contenedor, se perderían sus estilos.
+      -->
+      <div class="musicEmbed">
+        <div id="musicPlayer"></div>
+      </div>
       <a
-        class="spotifyFallback"
-        href="https://open.spotify.com/track/5gB2IrxOCX2j9bMnHKP38i?si=adb2af8b1d8c4ea4"
+        class="musicFallback"
+        href="https://www.youtube.com/watch?v=dhOtC7k-hwA"
         target="_blank"
         rel="noopener noreferrer"
-      >Si no inicia, abrir la canción en Spotify ↗</a>
+      >Si no inicia, abrir la canción en YouTube ↗</a>
     </div>
 
     <button
@@ -1286,13 +1302,18 @@
     const clip = document.getElementById('clip');
     const videoFallback = document.getElementById('videoFallback');
     const musicBtn = document.getElementById('musicBtn');
-    const spotifyPanel = document.getElementById('spotifyPanel');
-    const spotifyEmbed = document.getElementById('spotifyEmbed');
+    const musicPanel = document.getElementById('musicPanel');
     const sparksBox = document.getElementById('sparks');
     const collage = document.getElementById('collage');
     const photoFallback = document.getElementById('photoFallback');
     const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const spotifyTrackUri = 'spotify:track:5gB2IrxOCX2j9bMnHKP38i';
+    /*
+      Se usa YouTube y no Spotify a propósito: el embed de Spotify solo da la
+      canción completa si quien escucha tiene sesión Premium abierta en ese
+      mismo navegador, y si no, corta a los 30 segundos. YouTube la reproduce
+      completa sin cuenta ni login, que es el caso real de quien abra el enlace.
+    */
+    const youtubeVideoId = 'dhOtC7k-hwA';
 
     const phrases = [
       'Mor, hoy 30 de septiembre es una fecha importante…',
@@ -1341,12 +1362,12 @@
     let photoShown = false;
     let videoShown = false;
     let sparksTimer = null;
-    let spotifyController = null;
-    let spotifyReady = false;
-    let spotifyPlaying = false;
-    let spotifyPlaybackRequested = false;
-    let spotifyManuallyPaused = false;
-    let spotifyPanelHideTimer = null;
+    let musicPlayer = null;
+    let musicReady = false;
+    let musicPlaying = false;
+    let musicPlaybackRequested = false;
+    let musicManuallyPaused = false;
+    let musicPanelHideTimer = null;
     const pendingTimers = new Set();
 
     function motionDelay(milliseconds) {
@@ -1560,8 +1581,8 @@
         return;
       }
 
-      if (currentPhrase === -1 && !spotifyPlaying && !spotifyManuallyPaused) {
-        requestSpotifyPlayback();
+      if (currentPhrase === -1 && !musicPlaying && !musicManuallyPaused) {
+        requestMusicPlayback();
       }
 
       if (videoShown) {
@@ -1585,137 +1606,145 @@
       showPhrase(currentPhrase);
     }
 
-    function clearSpotifyPanelHideTimer() {
-      if (spotifyPanelHideTimer !== null) {
-        window.clearTimeout(spotifyPanelHideTimer);
-        spotifyPanelHideTimer = null;
+    function clearMusicPanelHideTimer() {
+      if (musicPanelHideTimer !== null) {
+        window.clearTimeout(musicPanelHideTimer);
+        musicPanelHideTimer = null;
       }
     }
 
-    function showSpotifyPanel() {
-      clearSpotifyPanelHideTimer();
-      document.body.classList.add('spotify-open');
-      spotifyPanel.classList.add('show');
-      spotifyPanel.setAttribute('aria-hidden', 'false');
-      spotifyPanel.inert = false;
+    function showMusicPanel() {
+      clearMusicPanelHideTimer();
+      document.body.classList.add('music-open');
+      musicPanel.classList.add('show');
+      musicPanel.setAttribute('aria-hidden', 'false');
+      musicPanel.inert = false;
       musicBtn.setAttribute('aria-expanded', 'true');
     }
 
-    function hideSpotifyPanel() {
-      clearSpotifyPanelHideTimer();
-      document.body.classList.remove('spotify-open');
-      spotifyPanel.classList.remove('show');
-      spotifyPanel.setAttribute('aria-hidden', 'true');
-      spotifyPanel.inert = true;
+    function hideMusicPanel() {
+      clearMusicPanelHideTimer();
+      document.body.classList.remove('music-open');
+      musicPanel.classList.remove('show');
+      musicPanel.setAttribute('aria-hidden', 'true');
+      musicPanel.inert = true;
       musicBtn.setAttribute('aria-expanded', 'false');
     }
 
-    function scheduleSpotifyPanelHide() {
-      if (!spotifyPanel.classList.contains('show') || spotifyPanelHideTimer !== null) {
+    function scheduleMusicPanelHide() {
+      if (!musicPanel.classList.contains('show') || musicPanelHideTimer !== null) {
         return;
       }
 
-      spotifyPanelHideTimer = window.setTimeout(() => {
-        spotifyPanelHideTimer = null;
-        if (spotifyPlaying) {
-          hideSpotifyPanel();
+      musicPanelHideTimer = window.setTimeout(() => {
+        musicPanelHideTimer = null;
+        if (musicPlaying) {
+          hideMusicPanel();
         }
       }, 650);
     }
 
-    function updateSpotifyButton() {
-      musicBtn.textContent = spotifyPlaying ? '⏸' : '🎵';
-      musicBtn.classList.toggle('playing', spotifyPlaying);
-      musicBtn.setAttribute('aria-pressed', String(spotifyPlaying));
-      const label = spotifyPlaying
-        ? 'Pausar canción de Spotify'
-        : 'Reproducir canción de Spotify';
+    function updateMusicButton() {
+      musicBtn.textContent = musicPlaying ? '⏸' : '🎵';
+      musicBtn.classList.toggle('playing', musicPlaying);
+      musicBtn.setAttribute('aria-pressed', String(musicPlaying));
+      const label = musicPlaying ? 'Pausar la canción' : 'Reproducir la canción';
       musicBtn.setAttribute('aria-label', label);
       musicBtn.title = label;
     }
 
-    function requestSpotifyPlayback() {
-      showSpotifyPanel();
-      spotifyPlaybackRequested = true;
+    function requestMusicPlayback() {
+      showMusicPanel();
+      musicPlaybackRequested = true;
 
-      if (spotifyController && spotifyReady) {
+      if (musicPlayer && musicReady) {
         try {
-          spotifyController.play();
+          musicPlayer.playVideo();
         } catch (error) {
           /* El reproductor visible permite iniciar la canción manualmente. */
         }
       }
     }
 
-    function toggleSpotifyPlayback() {
-      if (!spotifyController || !spotifyReady) {
-        showSpotifyPanel();
-        spotifyManuallyPaused = false;
-        spotifyPlaybackRequested = true;
+    function toggleMusicPlayback() {
+      if (!musicPlayer || !musicReady) {
+        showMusicPanel();
+        musicManuallyPaused = false;
+        musicPlaybackRequested = true;
         return;
       }
 
       try {
-        if (spotifyPlaying) {
-          clearSpotifyPanelHideTimer();
-          spotifyManuallyPaused = true;
-          spotifyPlaybackRequested = false;
-          spotifyPlaying = false;
-          updateSpotifyButton();
-          spotifyController.pause();
+        if (musicPlaying) {
+          clearMusicPanelHideTimer();
+          musicManuallyPaused = true;
+          musicPlaybackRequested = false;
+          musicPlaying = false;
+          updateMusicButton();
+          musicPlayer.pauseVideo();
         } else {
-          spotifyManuallyPaused = false;
-          spotifyPlaybackRequested = true;
-          spotifyController.resume();
+          musicManuallyPaused = false;
+          musicPlaybackRequested = true;
+          musicPlayer.playVideo();
         }
       } catch (error) {
-        showSpotifyPanel();
-        /* El usuario todavía puede utilizar los controles del Embed. */
+        showMusicPanel();
+        /* El usuario todavía puede usar los controles del reproductor. */
       }
     }
 
-    window.onSpotifyIframeApiReady = (IFrameAPI) => {
-      const options = {
-        uri: spotifyTrackUri,
-        width: '100%',
-        height: 152
+    window.onYouTubeIframeAPIReady = () => {
+      const playerVars = {
+        /* Evita que iOS se lleve el video a pantalla completa. */
+        playsinline: 1,
+        /* Visibles como respaldo si el navegador bloquea el arranque. */
+        controls: 1,
+        rel: 0,
+        modestbranding: 1,
+        /* loop necesita playlist con el mismo id para repetir un solo video. */
+        loop: 1,
+        playlist: youtubeVideoId
       };
 
-      IFrameAPI.createController(spotifyEmbed, options, (EmbedController) => {
-        spotifyController = EmbedController;
+      /* La API pide el origen, pero con file:// no existe y rompería la carga. */
+      if (window.location.protocol.startsWith('http')) {
+        playerVars.origin = window.location.origin;
+      }
 
-        EmbedController.addListener('ready', () => {
-          spotifyReady = true;
-          if (spotifyPlaybackRequested && !spotifyManuallyPaused) {
-            try {
-              EmbedController.play();
-            } catch (error) {
-              /* El reproductor visible funciona como respaldo. */
+      musicPlayer = new YT.Player('musicPlayer', {
+        videoId: youtubeVideoId,
+        playerVars,
+        events: {
+          onReady: () => {
+            musicReady = true;
+            if (musicPlaybackRequested && !musicManuallyPaused) {
+              try {
+                musicPlayer.playVideo();
+              } catch (error) {
+                /* El reproductor visible funciona como respaldo. */
+              }
             }
-          }
-        });
+          },
+          onStateChange: (event) => {
+            if (event.data === YT.PlayerState.PLAYING) {
+              musicPlaying = true;
+              musicPlaybackRequested = false;
+              updateMusicButton();
+              scheduleMusicPanelHide();
+              return;
+            }
 
-        EmbedController.addListener('playback_started', () => {
-          spotifyPlaying = true;
-          spotifyPlaybackRequested = false;
-          updateSpotifyButton();
-          scheduleSpotifyPanelHide();
-        });
-
-        EmbedController.addListener('playback_update', (event) => {
-          if (!event?.data || typeof event.data.isPaused !== 'boolean') {
-            return;
+            if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
+              musicPlaying = false;
+              clearMusicPanelHideTimer();
+              updateMusicButton();
+            }
+          },
+          onError: () => {
+            /* Queda el enlace para abrir la canción directo en YouTube. */
+            showMusicPanel();
           }
-
-          spotifyPlaying = !event.data.isPaused;
-          if (spotifyPlaying) {
-            spotifyPlaybackRequested = false;
-            scheduleSpotifyPanelHide();
-          } else {
-            clearSpotifyPanelHideTimer();
-          }
-          updateSpotifyButton();
-        });
+        }
       });
     };
 
@@ -1746,7 +1775,7 @@
       sparksTimer = window.setInterval(spawnSpark, 900);
     }
 
-    musicBtn.addEventListener('click', toggleSpotifyPlayback);
+    musicBtn.addEventListener('click', toggleMusicPlayback);
     btn.addEventListener('click', next);
     document.addEventListener('visibilitychange', syncSparks);
 
@@ -1768,6 +1797,6 @@
 
     syncSparks();
   </script>
-  <script src="https://open.spotify.com/embed/iframe-api/v1" async></script>
+  <script src="https://www.youtube.com/iframe_api" async></script>
 </body>
 </html>
