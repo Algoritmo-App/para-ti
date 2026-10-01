@@ -88,10 +88,24 @@
     .subtitle {
       margin: 16px 0 18px;
       color: #8a7a60;
-      font-size: 11px;
       text-align: center;
+    }
+
+    .subDate {
+      display: block;
+      font-size: 11px;
       letter-spacing: 2.5px;
       text-transform: uppercase;
+    }
+
+    /* Segunda línea subordinada: más chica y en cursiva para marcar jerarquía */
+    .subNote {
+      display: block;
+      margin-top: 6px;
+      font-size: 12px;
+      font-style: italic;
+      letter-spacing: 0.8px;
+      opacity: 0.85;
     }
 
     /* Viñetas: aparecen una tras otra y se quedan, para poder releer la tira */
@@ -149,12 +163,19 @@
       text-wrap: balance;
     }
 
+    /*
+      Pegado al borde inferior con sticky: así sigue a la vista mientras se
+      recorre la tira, en lugar de quedarse atrás entre dos viñetas.
+    */
     .chip {
+      position: sticky;
+      z-index: 30;
+      bottom: 12px;
       display: block;
       width: 100%;
-      min-height: 46px;
-      margin: 4px 0 14px;
-      padding: 11px 18px;
+      min-height: 48px;
+      margin: 10px 0 4px;
+      padding: 12px 18px;
       border: 2px solid var(--tinta);
       border-radius: 26px 22px 26px 20px;
       background: var(--flama);
@@ -162,6 +183,7 @@
       cursor: pointer;
       font-size: 14px;
       font-weight: 700;
+      box-shadow: 0 3px 0 var(--tinta), 0 8px 18px rgba(70, 56, 34, 0.26);
       transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
 
@@ -445,11 +467,16 @@
 
     /* Foto, montada como un recorte pegado en la hoja */
     /* Reproductor */
+    /*
+      Fijo a la ventana y no a la hoja: la tira es larga y en el celular el
+      botón se perdía arriba en cuanto bajabas. z-index por encima del apagón
+      para que siga siendo alcanzable incluso mientras se apagan las velitas.
+    */
     .musicBtn {
-      position: absolute;
-      z-index: 20;
-      top: -12px;
-      right: -12px;
+      position: fixed;
+      z-index: 50;
+      top: 12px;
+      right: 12px;
       width: 46px;
       height: 46px;
       display: flex;
@@ -713,7 +740,15 @@
       </g>
     </svg>
 
-    <p class="subtitle" id="subtitle">5 de octubre</p>
+    <!--
+      Dos <span> de bloque y no un salto de línea dentro del texto: textContent
+      no interpreta saltos, el HTML colapsa los espacios y todo quedaría en un
+      solo renglón.
+    -->
+    <p class="subtitle">
+      <span class="subDate">· 5 de octubre ·</span>
+      <span class="subNote">una fecha importante</span>
+    </p>
 
     <!-- ===== Viñeta 1: el perrito saluda ===== -->
     <section class="panel" id="panel1" aria-labelledby="pageTitle">
@@ -742,8 +777,6 @@
       </svg>
       <p class="caption">Hoy desperté con una sola misión…</p>
     </section>
-
-    <button class="chip" id="chip" type="button">Seguir leyendo →</button>
 
     <!--
       Las viñetas por revelar arrancan con inert: max-height y opacity las
@@ -1033,6 +1066,13 @@
       <p class="caption" id="photoCaption"></p>
     </section>
 
+    <!--
+      El botón de avanzar va al final y pegado al borde inferior. Antes estaba
+      entre la viñeta 1 y la 2, y conforme se revelaban las demás quedaba
+      enterrado en medio de la tira: en el celular se perdía al hacer scroll.
+    -->
+    <button class="chip" id="chip" type="button">Seguir leyendo →</button>
+
     <div
       class="musicPanel"
       id="musicPanel"
@@ -1050,7 +1090,7 @@
       </div>
       <a
         class="musicFallback"
-        href="https://www.youtube.com/watch?v=5ar42kauTd8"
+        href="https://www.youtube.com/watch?v=cDT12zAWDuM"
         target="_blank"
         rel="noopener noreferrer"
       >Si no inicia, abrir la canción en YouTube ↗</a>
@@ -1069,7 +1109,6 @@
     const cakeHint = document.getElementById('cakeHint');
     const finalText = document.getElementById('finalText');
     const photoCaption = document.getElementById('photoCaption');
-    const subtitle = document.getElementById('subtitle');
     const dim = document.getElementById('dim');
     const confettiBox = document.getElementById('confetti');
     const musicBtn = document.getElementById('musicBtn');
@@ -1080,7 +1119,7 @@
       Se usa YouTube y no Spotify: el embed de Spotify corta a los 30 segundos
       salvo que quien escuche tenga sesión Premium en ese mismo navegador.
     */
-    const youtubeVideoId = '5ar42kauTd8';
+    const youtubeVideoId = 'cDT12zAWDuM';
 
     const birthYear = 1973;
 
@@ -1373,12 +1412,18 @@
         return;
       }
 
+      /*
+        Se espera 7 segundos antes de esconder el reproductor, no medio segundo.
+        YouTube puede meter un anuncio antes de la canción y la API no avisa
+        cuándo es anuncio y cuándo es el video. Si el panel se cerrara de
+        inmediato, se oiría el anuncio sin ver el botón de saltarlo.
+      */
       musicPanelHideTimer = window.setTimeout(() => {
         musicPanelHideTimer = null;
         if (musicPlaying) {
           hideMusicPanel();
         }
-      }, 650);
+      }, 7000);
     }
 
     function updateMusicButton() {
@@ -1494,8 +1539,6 @@
     };
 
     /* ---------- Arranque ---------- */
-    subtitle.textContent = `· 5 de octubre · 
-    Una fecha importante`;
     panels[0].classList.add('show');
 
     chip.addEventListener('click', onChip);
