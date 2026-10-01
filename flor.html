@@ -89,37 +89,90 @@
         radial-gradient(circle at 20% 32%, rgba(255, 255, 255, 0.55) 0 2px, transparent 3px);
     }
 
-    /* Corazones flotantes */
-    .hearts {
+    /*
+      Pétalos que caen y se quedan.
+
+      A diferencia de las partículas que suben y desaparecen, estos aterrizan:
+      al terminar la caída el JS los convierte en un pétalo en reposo dentro de
+      .fallen, así la escena acumula rastro y al final no se ve como al inicio.
+      La distancia de caída la calcula el JS desde la altura real de la escena,
+      porque .scene usa clamp() y no es un valor fijo.
+    */
+    .petalsLayer {
       position: absolute;
-      z-index: 2;
+      z-index: 8;
       inset: 0;
       overflow: hidden;
       pointer-events: none;
     }
 
-    .heart {
+    .fallingPetal {
       position: absolute;
-      bottom: -20px;
+      top: -28px;
+      width: 15px;
+      height: 21px;
+      border-radius: 50% 50% 46% 46% / 62% 62% 38% 38%;
+      background: linear-gradient(180deg, #e2f1fd 0%, #a9d0f2 55%, #6d9ccd 100%);
+      box-shadow: inset 0 -3px 5px rgba(38, 72, 116, 0.22);
       opacity: 0;
-      font-size: 16px;
-      animation: float-up 7s ease-in infinite;
+      animation: petal-fall var(--fall-time, 7s) linear forwards;
     }
 
-    @keyframes float-up {
+    /* El pétalo arrancado cae más grande, porque viene de la flor y no del aire. */
+    .fallingPetal.plucked {
+      width: 26px;
+      height: 38px;
+    }
+
+    @keyframes petal-fall {
       0% {
         opacity: 0;
-        transform: translateY(0) translateX(0) rotate(0deg);
+        transform: translate(0, 0) rotate(0deg);
       }
-      10% {
-        opacity: 0.85;
-      }
-      90% {
-        opacity: 0.5;
+      7% {
+        opacity: 0.95;
       }
       100% {
-        opacity: 0;
-        transform: translateY(-620px) translateX(var(--drift, 20px)) rotate(25deg);
+        opacity: 0.9;
+        transform:
+          translate(var(--drift, 20px), var(--fall-distance, 480px))
+          rotate(var(--spin, 300deg));
+      }
+    }
+
+    /* Montón en el suelo: vistos desde arriba quedan achatados. */
+    /*
+      Se apoya en la línea de la tierra: .ground ocupa 155px con bottom -35px,
+      así que su borde visible queda a 120px del fondo de la escena. El montón
+      se coloca justo ahí para que el pétalo no salte al aterrizar.
+    */
+    .fallen {
+      position: absolute;
+      z-index: 3;
+      bottom: 104px;
+      left: 0;
+      width: 100%;
+      height: 28px;
+      pointer-events: none;
+    }
+
+    .restingPetal {
+      position: absolute;
+      bottom: 0;
+      width: 17px;
+      height: 11px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, #d4e7f8 0%, #8fb4dc 70%, #6b93c4 100%);
+      box-shadow: 0 1px 2px rgba(48, 74, 104, 0.22);
+      opacity: 0;
+      transform: rotate(var(--lie, 0deg)) scale(0.5);
+      animation: petal-land 0.45s ease-out forwards;
+    }
+
+    @keyframes petal-land {
+      to {
+        opacity: 0.92;
+        transform: rotate(var(--lie, 0deg)) scale(1);
       }
     }
 
@@ -733,7 +786,89 @@
         inset 0 3px 6px rgba(255, 255, 255, 0.55),
         0 0 0 3px rgba(255, 255, 255, 0.3),
         0 3px 8px rgba(36, 66, 104, 0.32);
+      /* No debe robarle el clic a los pétalos, que sí son botones. */
+      pointer-events: none;
       transform: translate(-50%, -50%);
+    }
+
+    /*
+      Deshojar la margarita.
+
+      Los 5 pétalos delanteros son <button> de verdad, no divs con onclick: así
+      funcionan con teclado y lector de pantalla sin trabajo extra. Miden 56x86,
+      muy por encima del mínimo de 44px para el dedo.
+    */
+    .petal:not(.back) {
+      padding: 0;
+      border: 0;
+      /* El prefijo es para Safari de iOS anterior a 15.4, que ignora el estándar. */
+      -webkit-appearance: none;
+      appearance: none;
+      cursor: default;
+      transition: opacity 0.35s ease;
+    }
+
+    .petal.back {
+      pointer-events: none;
+    }
+
+    .flower.pluckable .petal:not(.back) {
+      cursor: pointer;
+      /*
+        La invitación va por filter y NO por transform: el transform ya lo ocupan
+        .p1-.p5 para colocar y rotar cada pétalo, y animarlo aquí lo rompería.
+      */
+      animation: petal-invite 2.3s ease-in-out infinite;
+    }
+
+    @keyframes petal-invite {
+      0%, 100% {
+        filter: brightness(1);
+      }
+      50% {
+        filter: brightness(1.13) saturate(1.06);
+      }
+    }
+
+    .petal.plucked {
+      opacity: 0;
+      pointer-events: none;
+      animation: none;
+    }
+
+    .petal:not(.back):focus-visible {
+      outline: 3px solid #17324d;
+      outline-offset: 2px;
+    }
+
+    /* Pista para que se entienda que los pétalos se tocan. */
+    .hint {
+      position: absolute;
+      z-index: 12;
+      bottom: 16px;
+      left: 50%;
+      padding: 8px 16px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.86);
+      color: #2b5676;
+      font-size: 13px;
+      font-weight: 700;
+      opacity: 0;
+      box-shadow: 0 3px 10px rgba(40, 70, 100, 0.18);
+      transform: translateX(-50%) translateY(10px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    .hint.show {
+      opacity: 1;
+      transform: translateX(-50%);
+    }
+
+    /* Durante el deshojado el botón se esconde sin alterar el alto del layout. */
+    .button.hidden {
+      visibility: hidden;
+      opacity: 0;
+      pointer-events: none;
     }
 
     .final {
@@ -783,37 +918,52 @@
       transition-delay: 0s;
     }
 
-    .polaroid {
-      width: min(88%, 410px);
-      padding: 14px 14px 38px;
-      border-radius: 6px;
-      background: #fff;
-      box-shadow: 0 14px 34px rgba(40, 60, 80, 0.28);
-      transform: rotate(-2deg) scale(0.9);
+    /*
+      Álbum de flores secas, en lugar de la polaroid. Es otra metáfora física
+      para la misma foto: papel envejecido, esquineros de cartón que la sujetan
+      y una flor prensada al lado.
+    */
+    .album {
+      position: relative;
+      width: min(90%, 420px);
+      padding: 16px 16px 14px;
+      border-radius: 3px;
+      background:
+        radial-gradient(ellipse at 18% 12%, rgba(188, 158, 108, 0.16), transparent 58%),
+        radial-gradient(ellipse at 82% 88%, rgba(168, 138, 94, 0.14), transparent 58%),
+        linear-gradient(170deg, #fdf7e8 0%, #f5ead2 100%);
+      box-shadow:
+        inset 0 0 0 1px rgba(150, 120, 80, 0.22),
+        0 14px 34px rgba(40, 60, 80, 0.3);
+      transform: rotate(-1.5deg) scale(0.9);
       transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
 
-    .photoWrap.show .polaroid {
-      transform: rotate(-2deg) scale(1);
+    .photoWrap.show .album {
+      transform: rotate(-1.5deg) scale(1);
     }
 
-    .polaroid img {
+    .albumPhoto {
+      position: relative;
+      padding: 7px;
+      background: rgba(255, 255, 255, 0.55);
+    }
+
+    .album img {
       display: block;
       width: 100%;
-      max-height: min(300px, 45dvh);
-      border-radius: 2px;
-      background: #dfeaf3;
+      max-height: min(272px, 41dvh);
+      background: #e6ddc8;
       object-fit: contain;
     }
 
     .photoFallback {
-      min-height: 220px;
+      min-height: 200px;
       padding: 24px;
       display: grid;
       place-items: center;
-      border-radius: 2px;
-      background: #dfeaf3;
-      color: #456078;
+      background: #e6ddc8;
+      color: #7a6245;
       font-size: 14px;
       line-height: 1.5;
     }
@@ -822,18 +972,114 @@
       display: none;
     }
 
-    .polaroid .cap {
-      margin: 12px 0 0;
-      color: #28485e;
+    /* Esquineros de cartón que sujetan la foto. */
+    .corner {
+      position: absolute;
+      z-index: 2;
+      width: 22px;
+      height: 22px;
+      background: linear-gradient(135deg, rgba(104, 76, 44, 0.5), rgba(104, 76, 44, 0.26));
+    }
+
+    .corner.tl {
+      top: 0;
+      left: 0;
+      clip-path: polygon(0 0, 100% 0, 0 100%);
+    }
+
+    .corner.tr {
+      top: 0;
+      right: 0;
+      clip-path: polygon(100% 0, 100% 100%, 0 0);
+    }
+
+    .corner.bl {
+      bottom: 0;
+      left: 0;
+      clip-path: polygon(0 0, 0 100%, 100% 100%);
+    }
+
+    .corner.br {
+      bottom: 0;
+      right: 0;
+      clip-path: polygon(100% 0, 100% 100%, 0 100%);
+    }
+
+    .albumFoot {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 11px;
+    }
+
+    /*
+      Manuscrita del sistema. Depende de las fuentes instaladas en el equipo de
+      quien abra la página; si no hay ninguna, cae en la cursiva genérica.
+    */
+    .albumCap,
+    .albumDate {
+      margin: 0;
+      color: #5d4836;
+      font-family: "Segoe Script", "Bradley Hand", "Snell Roundhand", cursive;
+      line-height: 1.35;
+      text-align: left;
+    }
+
+    .albumCap {
       font-size: 15px;
-      font-weight: 700;
-      line-height: 1.4;
+    }
+
+    .albumDate {
+      flex: none;
+      font-size: 13px;
+      opacity: 0.75;
+    }
+
+    /* Flor prensada: aplanada, sin brillos y con el azul apagado por los años. */
+    .pressed {
+      position: absolute;
+      right: 12px;
+      bottom: 8px;
+      width: 46px;
+      height: 46px;
+      opacity: 0.72;
+      transform: rotate(14deg);
+    }
+
+    .pressedPetal {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 16px;
+      height: 23px;
+      border-radius: 50% 50% 46% 46% / 62% 62% 38% 38%;
+      background: linear-gradient(180deg, #b8c9d8 0%, #8ca3b8 100%);
+      transform-origin: 50% 100%;
+      mix-blend-mode: multiply;
+    }
+
+    .pp1 { transform: translate(-50%, -100%) rotate(0deg); }
+    .pp2 { transform: translate(-50%, -100%) rotate(72deg); }
+    .pp3 { transform: translate(-50%, -100%) rotate(144deg); }
+    .pp4 { transform: translate(-50%, -100%) rotate(216deg); }
+    .pp5 { transform: translate(-50%, -100%) rotate(288deg); }
+
+    .pressedCore {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: #b59a62;
+      transform: translate(-50%, -50%);
     }
 
     .photoWrap .msg {
-      margin: 18px 0 0;
+      margin: 16px 0 0;
       color: #28485e;
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 650;
       line-height: 1.4;
       text-shadow: 0 1px 4px rgba(255, 255, 255, 0.7);
@@ -901,7 +1147,7 @@
         left: 18px;
       }
 
-      .polaroid {
+      .album {
         width: 96%;
       }
 
@@ -937,8 +1183,16 @@
         transition-delay: 0s !important;
       }
 
-      .heart {
+      /*
+        Se corta la lluvia de pétalos, pero los que ya aterrizaron se quedan:
+        el rastro en el suelo es contenido, no decoración animada.
+      */
+      .fallingPetal {
         display: none;
+      }
+
+      .flower.pluckable .petal:not(.back) {
+        animation: none;
       }
     }
   </style>
@@ -960,8 +1214,10 @@
       >🎵</button>
 
       <div class="sky" aria-hidden="true"></div>
-      <div class="hearts" id="hearts" aria-hidden="true"></div>
+      <div class="petalsLayer" id="petalsLayer" aria-hidden="true"></div>
+      <div class="fallen" id="fallenPetals" aria-hidden="true"></div>
       <p class="text" id="txt" aria-live="polite" aria-atomic="true" aria-hidden="true"></p>
+      <p class="hint" id="hint" aria-live="polite" aria-hidden="true"></p>
       <p class="final" id="final" aria-hidden="true">
         Gracias por ser tú<br>
         <span>y por hacer florecer mis días. 💙</span>
@@ -974,11 +1230,15 @@
         <div class="petal back pb3"></div>
         <div class="petal back pb4"></div>
         <div class="petal back pb5"></div>
-        <div class="petal p1"></div>
-        <div class="petal p2"></div>
-        <div class="petal p3"></div>
-        <div class="petal p4"></div>
-        <div class="petal p5"></div>
+        <!--
+          Arrancan deshabilitados: así no son enfocables ni clicables antes de
+          que la flor abra, y el JS los habilita al empezar el deshojado.
+        -->
+        <button class="petal p1" type="button" aria-label="Quitar el pétalo 1 de 5" disabled></button>
+        <button class="petal p2" type="button" aria-label="Quitar el pétalo 2 de 5" disabled></button>
+        <button class="petal p3" type="button" aria-label="Quitar el pétalo 3 de 5" disabled></button>
+        <button class="petal p4" type="button" aria-label="Quitar el pétalo 4 de 5" disabled></button>
+        <button class="petal p5" type="button" aria-label="Quitar el pétalo 5 de 5" disabled></button>
         <div class="center"></div>
       </div>
 
@@ -1055,14 +1315,33 @@
       <div class="ground" aria-hidden="true"></div>
 
       <div class="photoWrap" id="photoWrap" aria-hidden="true">
-        <div class="polaroid">
-          <img id="collage" src="imagenes/collage.jpeg" alt="Collage de nuestros momentos juntos">
-          <div class="photoFallback" id="photoFallback" role="img" aria-label="Foto pendiente" hidden>
-            Agrega tu foto en <strong>imagenes/collage.jpeg</strong>
+        <div class="album">
+          <div class="albumPhoto">
+            <img id="collage" src="imagenes/collage.jpeg" alt="Collage de nuestros momentos juntos">
+            <div class="photoFallback" id="photoFallback" role="img" aria-label="Foto pendiente" hidden>
+              Agrega tu foto en <strong>imagenes/collage.jpeg</strong>
+            </div>
+            <span class="corner tl" aria-hidden="true"></span>
+            <span class="corner tr" aria-hidden="true"></span>
+            <span class="corner bl" aria-hidden="true"></span>
+            <span class="corner br" aria-hidden="true"></span>
           </div>
-          <p class="cap">Feliz Día al mejor novio del mundo 👩🏻‍❤️‍💋‍👨🏻🥇</p>
+
+          <div class="albumFoot">
+            <p class="albumCap">Feliz día al mejor novio del mundo</p>
+            <p class="albumDate">3 · 10 · 2026</p>
+          </div>
+
+          <div class="pressed" aria-hidden="true">
+            <div class="pressedPetal pp1"></div>
+            <div class="pressedPetal pp2"></div>
+            <div class="pressedPetal pp3"></div>
+            <div class="pressedPetal pp4"></div>
+            <div class="pressedPetal pp5"></div>
+            <div class="pressedCore"></div>
+          </div>
         </div>
-        <p class="msg"> ✨ #NationalBoyfriendDay ✨</p>
+        <p class="msg">Guardado para no olvidarlo 💙</p>
       </div>
     </section>
 
@@ -1091,7 +1370,7 @@
 
     <button
       class="button"
-      id="next"
+      id="action"
       type="button"
       aria-controls="scene"
       aria-busy="false"
@@ -1100,7 +1379,7 @@
 
   <script>
     const txt = document.getElementById('txt');
-    const btn = document.getElementById('next');
+    const btn = document.getElementById('action');
     const seed = document.getElementById('seed');
     const stem = document.getElementById('stem');
     const leaf1 = document.getElementById('leaf1');
@@ -1111,7 +1390,11 @@
     const photoWrap = document.getElementById('photoWrap');
     const musicBtn = document.getElementById('musicBtn');
     const musicPanel = document.getElementById('musicPanel');
-    const heartsBox = document.getElementById('hearts');
+    const scene = document.getElementById('scene');
+    const hint = document.getElementById('hint');
+    const petalsLayer = document.getElementById('petalsLayer');
+    const fallenPetals = document.getElementById('fallenPetals');
+    const petals = Array.from(flower.querySelectorAll('.petal:not(.back)'));
     const collage = document.getElementById('collage');
     const photoFallback = document.getElementById('photoFallback');
     const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -1123,31 +1406,40 @@
     */
     const youtubeVideoId = 'GE0e0hEZkZ4';
 
-    const phrases = [
+    /*
+      El crecimiento ya no avanza a botonazos: corre solo. El mensaje central lo
+      entrega ella deshojando la flor, un pétalo por línea. Así el botón de abajo
+      se usa 3 veces en toda la página (empezar, ver foto, reiniciar) en vez de 8.
+    */
+    const growthPhrases = [
       'Mor, hay algo que quiero decirte…',
-      'Contigo aprendí que las cosas más bonitas crecen poco a poco…',
-      'con tiempo, cuidado y mucha paciencia.',
-      'Y así florecen hasta volverse extraordinarias. 💙',
-      'Mi mundo florece contigo y hoy quiero regalarte un ramo de flores azules…',
-      'para que siempre recuerdes lo especial que eres para mí. 💙😘'
+      'Contigo aprendí que lo más bonito crece despacio…',
+      'con tiempo, cuidado y mucha paciencia. 💙'
     ];
 
-    const seedPhraseIndex = 0;
-    const growthPhraseIndex = 1;
-    const patiencePhraseIndex = 2;
-    const bloomPhraseIndex = 3;
-    const giftPhraseIndex = phrases.length - 2;
-    const lastPhraseIndex = phrases.length - 1;
-    const seedReadingTime = 1800;
-    const growthReadingTime = 2600;
-    const giftPhraseReadingTime = 3600;
-    const lastPhraseReadingTime = 3200;
+    /* Una línea por pétalo, en este orden, sin importar cuál toque primero. */
+    const petalPhrases = [
+      'Te quiero…',
+      'te quiero en lo bueno…',
+      'te quiero en lo difícil…',
+      'te quiero sin tener que pensarlo…',
+      'y te voy a querer mañana otra vez. 💙'
+    ];
 
-    let currentPhrase = -1;
-    let busy = false;
-    let finalShown = false;
-    let photoShown = false;
-    let heartsTimer = null;
+    const bouquetPhrase = 'Deshojaste una… y nacieron todas estas. 💙';
+
+    /* Etapas del recorrido. Reemplazan los booleanos sueltos de antes. */
+    const STAGE_IDLE = 'idle';
+    const STAGE_GROWING = 'growing';
+    const STAGE_PLUCKING = 'plucking';
+    const STAGE_BOUQUET = 'bouquet';
+    const STAGE_ALBUM = 'album';
+
+    const maxRestingPetals = 26;
+
+    let stage = STAGE_IDLE;
+    let pluckedCount = 0;
+    let petalRainTimer = null;
     let musicPlayer = null;
     let musicReady = false;
     let musicPlaying = false;
@@ -1175,148 +1467,184 @@
       pendingTimers.clear();
     }
 
-    function setBusy(isBusy) {
-      busy = isBusy;
-      btn.disabled = isBusy;
-      btn.setAttribute('aria-busy', String(isBusy));
-    }
-
     function setVisible(element, isVisible) {
       element.classList.toggle('show', isVisible);
       element.setAttribute('aria-hidden', String(!isVisible));
     }
 
-    function applyGrowthStage(index) {
-      if (index === seedPhraseIndex) {
-        seed.classList.remove('sprouting');
-        seed.classList.add('show');
-        stem.style.height = '0';
-      }
-      if (index === growthPhraseIndex) {
+    /*
+      El botón se esconde durante el crecimiento y el deshojado, para que la
+      única cosa que invite a tocar sean los pétalos. Se oculta con visibility
+      y no con hidden, así no cambia el alto del layout.
+    */
+    function hideButton() {
+      btn.classList.add('hidden');
+      btn.disabled = true;
+      btn.setAttribute('aria-busy', 'true');
+    }
+
+    function showButton(label) {
+      btn.textContent = label;
+      btn.classList.remove('hidden');
+      btn.disabled = false;
+      btn.setAttribute('aria-busy', 'false');
+    }
+
+    function sayPhrase(text) {
+      setVisible(txt, false);
+      schedule(() => {
+        txt.textContent = text;
+        setVisible(txt, true);
+      }, 260);
+    }
+
+    function showHint(text) {
+      hint.textContent = text;
+      hint.classList.add('show');
+      hint.setAttribute('aria-hidden', 'false');
+    }
+
+    function hideHint() {
+      hint.classList.remove('show');
+      hint.setAttribute('aria-hidden', 'true');
+    }
+
+    /* Etapa 1: crece sola, sin clics. */
+    function runGrowth() {
+      stage = STAGE_GROWING;
+      hideButton();
+
+      seed.classList.remove('sprouting');
+      seed.classList.add('show');
+      stem.style.height = '0';
+      sayPhrase(growthPhrases[0]);
+
+      schedule(() => {
         seed.classList.remove('show');
         seed.classList.add('sprouting');
         stem.style.height = '205px';
         leaf1.classList.add('show');
-      }
-      if (index === patiencePhraseIndex) {
+        sayPhrase(growthPhrases[1]);
+      }, 2400, true);
+
+      schedule(() => {
         stem.style.height = '255px';
         leaf2.classList.add('show');
-      }
-      if (index === bloomPhraseIndex) {
+        sayPhrase(growthPhrases[2]);
+      }, 5000, true);
+
+      schedule(() => {
         flower.classList.add('show');
-      }
-      if (index === giftPhraseIndex) {
-        bouquet.classList.add('show');
-      }
+        setVisible(txt, false);
+      }, 7600, true);
+
+      schedule(startPlucking, 9200, true);
     }
 
-    function reset() {
-      clearPendingTimers();
-      currentPhrase = -1;
-      finalShown = false;
-      photoShown = false;
-      txt.textContent = '';
-      setVisible(txt, false);
-      setVisible(final, false);
-      setVisible(photoWrap, false);
-      seed.classList.remove('show', 'sprouting');
-      leaf1.classList.remove('show');
-      leaf2.classList.remove('show');
-      flower.classList.remove('show');
-      bouquet.classList.remove('show');
-      stem.style.height = '0';
-      btn.textContent = 'Comenzar 💙';
-      setBusy(false);
+    /* Etapa 2: ella deshoja, y cada pétalo entrega una línea. */
+    function startPlucking() {
+      stage = STAGE_PLUCKING;
+      pluckedCount = 0;
+      flower.classList.add('pluckable');
+      petals.forEach((petal) => {
+        petal.disabled = false;
+      });
+      showHint('Deshójala: toca un pétalo 💙');
     }
 
-    function showPhrase(index) {
-      clearPendingTimers();
-      finalShown = false;
-      setBusy(true);
-      setVisible(final, false);
-      setVisible(txt, false);
-      btn.textContent = 'Siguiente';
+    function pluckPetal(petal) {
+      if (stage !== STAGE_PLUCKING || petal.classList.contains('plucked')) {
+        return;
+      }
+
+      petal.classList.add('plucked');
+      petal.disabled = true;
+      spawnPluckedPetal();
+
+      sayPhrase(petalPhrases[pluckedCount]);
+      pluckedCount += 1;
+
+      const left = petalPhrases.length - pluckedCount;
+      if (left > 0) {
+        showHint(left === 1 ? 'Queda un pétalo' : `Quedan ${left} pétalos`);
+        return;
+      }
+
+      hideHint();
+      flower.classList.remove('pluckable');
+      schedule(revealBouquet, 2600, true);
+    }
+
+    /* Etapa 3: el pago del deshojado. Se deshoja una y aparecen muchas. */
+    function revealBouquet() {
+      stage = STAGE_BOUQUET;
+      bouquet.classList.add('show');
+      sayPhrase(bouquetPhrase);
 
       schedule(() => {
-        const isSeedPhrase = index === seedPhraseIndex;
-        const isGrowthPhrase = index === growthPhraseIndex;
-        const isGiftPhrase = index === giftPhraseIndex;
-        const isLastPhrase = index === lastPhraseIndex;
-
-        txt.textContent = phrases[index];
-        setVisible(txt, true);
-        applyGrowthStage(index);
-
-        const readingTime = isSeedPhrase
-          ? seedReadingTime
-          : isGrowthPhrase
-            ? growthReadingTime
-            : isGiftPhrase
-              ? giftPhraseReadingTime
-              : isLastPhrase
-                ? lastPhraseReadingTime
-                : 0;
-
-        if (readingTime > 0) {
-          schedule(() => setBusy(false), readingTime, true);
-          return;
-        }
-
-        setBusy(false);
-      }, 280);
-    }
-
-    function showFinalMessage() {
-      clearPendingTimers();
-      setBusy(true);
-      setVisible(txt, false);
-      btn.textContent = 'Siguiente';
-
-      schedule(() => {
+        setVisible(txt, false);
         setVisible(final, true);
-        finalShown = true;
-        btn.textContent = 'Ver nuestra foto 🥰';
-        setBusy(false);
-      }, 500);
+        showButton('Ver nuestra foto 🥰');
+      }, 3600, true);
     }
 
-    function showPhoto() {
-      clearPendingTimers();
-      setBusy(true);
+    function showAlbum() {
+      stage = STAGE_ALBUM;
+      hideButton();
       setVisible(final, false);
 
       schedule(() => {
         setVisible(photoWrap, true);
-        photoShown = true;
-        btn.textContent = 'Volver a empezar 💙';
-        setBusy(false);
+        showButton('Volver a empezar 💙');
       }, 500);
     }
 
-    function next() {
-      if (busy) {
+    function reset() {
+      clearPendingTimers();
+      stage = STAGE_IDLE;
+      pluckedCount = 0;
+      txt.textContent = '';
+      setVisible(txt, false);
+      setVisible(final, false);
+      setVisible(photoWrap, false);
+      hideHint();
+
+      seed.classList.remove('show', 'sprouting');
+      leaf1.classList.remove('show');
+      leaf2.classList.remove('show');
+      flower.classList.remove('show', 'pluckable');
+      bouquet.classList.remove('show');
+      stem.style.height = '0';
+
+      petals.forEach((petal) => {
+        petal.classList.remove('plucked');
+        petal.disabled = true;
+      });
+
+      /* Borra el rastro del suelo para que al reiniciar la escena esté limpia. */
+      fallenPetals.replaceChildren();
+      petalsLayer.replaceChildren();
+
+      showButton('Comenzar 💙');
+    }
+
+    function onButtonClick() {
+      if (stage === STAGE_IDLE) {
+        if (!musicPlaying && !musicManuallyPaused) {
+          requestMusicPlayback();
+        }
+        runGrowth();
         return;
       }
 
-      if (currentPhrase === -1 && !musicPlaying && !musicManuallyPaused) {
-        requestMusicPlayback();
+      if (stage === STAGE_BOUQUET) {
+        showAlbum();
+        return;
       }
 
-      if (photoShown) {
+      if (stage === STAGE_ALBUM) {
         reset();
-        return;
       }
-      if (finalShown) {
-        showPhoto();
-        return;
-      }
-      if (currentPhrase === lastPhraseIndex) {
-        showFinalMessage();
-        return;
-      }
-
-      currentPhrase += 1;
-      showPhrase(currentPhrase);
     }
 
     function clearMusicPanelHideTimer() {
@@ -1461,40 +1789,105 @@
       });
     };
 
-    function spawnHeart() {
-      const heart = document.createElement('div');
-      heart.className = 'heart';
-      heart.textContent = Math.random() > 0.5 ? '💙' : '🌸';
-      heart.style.left = `${5 + Math.random() * 90}%`;
-      heart.style.setProperty('--drift', `${Math.random() * 40 - 20}px`);
-      heart.style.animationDuration = `${6 + Math.random() * 3}s`;
-      heart.addEventListener('animationend', () => heart.remove(), { once: true });
-      heartsBox.appendChild(heart);
+    /*
+      La escena usa clamp() para su alto, así que la distancia de caída se mide
+      en vivo. El suelo visible arranca unos 118px sobre el borde inferior.
+    */
+    function fallDistance() {
+      /*
+        El pétalo arranca en top:-28px y mide 21px de alto, así que para que su
+        borde inferior caiga sobre la tierra (120px desde el fondo) la distancia
+        tiene que ser alto - 113. Si no, aterriza flotando o enterrado.
+      */
+      return Math.max(240, scene.clientHeight - 113);
     }
 
-    function syncHearts() {
-      if (heartsTimer !== null) {
-        window.clearInterval(heartsTimer);
-        heartsTimer = null;
+    function restPetal(startLeftPercent, driftPx) {
+      const resting = document.createElement('div');
+      resting.className = 'restingPetal';
+
+      /* La deriva viene en px; se pasa a % para colocarla sobre el ancho real. */
+      const driftPercent = (driftPx / Math.max(1, scene.clientWidth)) * 100;
+      const left = Math.min(93, Math.max(2, startLeftPercent + driftPercent));
+      resting.style.left = `${left}%`;
+      /* Se dispersan un poco en profundidad: un montón plano se ve artificial. */
+      resting.style.bottom = `${Math.random() * 16}px`;
+      resting.style.setProperty('--lie', `${Math.random() * 180 - 90}deg`);
+
+      fallenPetals.appendChild(resting);
+
+      /* Tope para que el montón no infle el DOM en visitas largas. */
+      while (fallenPetals.children.length > maxRestingPetals) {
+        fallenPetals.firstElementChild.remove();
+      }
+    }
+
+    function spawnFallingPetal(options = {}) {
+      const petal = document.createElement('div');
+      petal.className = options.plucked ? 'fallingPetal plucked' : 'fallingPetal';
+
+      const startLeft = options.left ?? 6 + Math.random() * 86;
+      const drift = Math.random() * 90 - 45;
+
+      petal.style.left = `${startLeft}%`;
+      if (options.top !== undefined) {
+        petal.style.top = `${options.top}px`;
+      }
+      petal.style.setProperty('--drift', `${drift}px`);
+      petal.style.setProperty('--fall-distance', `${options.distance ?? fallDistance()}px`);
+      petal.style.setProperty('--spin', `${200 + Math.random() * 340}deg`);
+      petal.style.setProperty('--fall-time', `${options.time ?? 6 + Math.random() * 3}s`);
+
+      /* Al terminar la caída deja de ser partícula y pasa a ser rastro. */
+      petal.addEventListener('animationend', () => {
+        petal.remove();
+        restPetal(startLeft, drift);
+      }, { once: true });
+
+      petalsLayer.appendChild(petal);
+    }
+
+    /* El pétalo arrancado sale de la flor, no del borde de arriba. */
+    function spawnPluckedPetal() {
+      const startTop = scene.clientHeight * 0.28333 + 40;
+
+      spawnFallingPetal({
+        plucked: true,
+        left: 44 + Math.random() * 12,
+        top: startTop,
+        distance: Math.max(110, fallDistance() - startTop),
+        time: 2.2 + Math.random() * 0.6
+      });
+    }
+
+    function syncPetalRain() {
+      if (petalRainTimer !== null) {
+        window.clearInterval(petalRainTimer);
+        petalRainTimer = null;
       }
 
       if (motionQuery.matches || document.hidden) {
-        heartsBox.replaceChildren();
+        petalsLayer.replaceChildren();
         return;
       }
 
-      spawnHeart();
-      heartsTimer = window.setInterval(spawnHeart, 900);
+      spawnFallingPetal();
+      petalRainTimer = window.setInterval(() => spawnFallingPetal(), 1500);
     }
 
     musicBtn.addEventListener('click', toggleMusicPlayback);
-    btn.addEventListener('click', next);
-    document.addEventListener('visibilitychange', syncHearts);
+    btn.addEventListener('click', onButtonClick);
+
+    petals.forEach((petal) => {
+      petal.addEventListener('click', () => pluckPetal(petal));
+    });
+
+    document.addEventListener('visibilitychange', syncPetalRain);
 
     if (typeof motionQuery.addEventListener === 'function') {
-      motionQuery.addEventListener('change', syncHearts);
+      motionQuery.addEventListener('change', syncPetalRain);
     } else {
-      motionQuery.addListener(syncHearts);
+      motionQuery.addListener(syncPetalRain);
     }
 
     collage.addEventListener('error', () => {
@@ -1502,7 +1895,7 @@
       photoFallback.hidden = false;
     }, { once: true });
 
-    syncHearts();
+    syncPetalRain();
   </script>
   <script src="https://www.youtube.com/iframe_api" async></script>
 </body>
