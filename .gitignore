@@ -11,3 +11,7 @@ imagenes/Snoopy.jpg
 Thumbs.db
 desktop.ini
 .DS_Store
+
+# Carpeta temporal para arrastrar a otro hosting. Es una copia de cumple.html
+# renombrada a index.html; el original sigue siendo la fuente de verdad.
+publicar-cumple/
